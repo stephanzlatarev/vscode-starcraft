@@ -1,0 +1,12 @@
+{
+  "name": "starcraft",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node ./go.js"
+  },
+  "dependencies": {
+		"protobufjs": "^6.11.4",
+    "ws": "8.18.0"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "vscode-starcraft",
+  "description": "Visual Studio Code extension for StarCraft II bots",
+  "version": "1.0.0",
+  "publisher": "stephanzlatarev",
+  "repository": "https://github.com/stephanzlatarev/vscode-starcraft",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "starcraft.start.game",
+        "title": "StarCraft II: Start game"
+      }
+    ]
+  },
+  "scripts": {},
+  "dependencies": {
+    "@node-sc2/proto": "^0.6.0-alpha.0",
+    "vscode": "*",
+    "ws": "^8.18.0"
+  }
+}
