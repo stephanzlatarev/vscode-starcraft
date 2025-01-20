@@ -20,7 +20,9 @@
   "scripts": {},
   "dependencies": {
     "@node-sc2/proto": "^0.6.0-alpha.0",
-    "vscode": "*",
     "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "vscode": "*"
   }
 }
