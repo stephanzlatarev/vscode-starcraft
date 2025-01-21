@@ -5,10 +5,10 @@ const copy = require("copy-webpack-plugin");
 module.exports = {
   target: "node",
 
-  entry: "./extension/extension.js",
+  entry: "./code/extension.js",
   output: {
     path: path.resolve(__dirname, "dist"),
-    filename: "extension.js",
+    filename: "./code/extension.js",
     libraryTarget: "commonjs2",
     devtoolModuleFilenameTemplate: "../[resource-path]",
     clean: true,
@@ -26,19 +26,14 @@ module.exports = {
         test: /\.js$/,
         exclude: /node_modules/
       },
-      {
-        test: /\.webp$/i,
-        use: [
-          {
-            loader: 'file-loader',
-          },
-        ],
-      },
     ]
   },
   plugins: [
     new copy({
       patterns: [
+        "LICENSE",
+        "package.json",
+        "README.md",
         { from: "icons", to: "icons" }
       ]
     })

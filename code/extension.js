@@ -50,7 +50,7 @@ function activate(context) {
 
     // Create zoom panel
     zoomPanel = vscode.window.createWebviewPanel("starcraft.zoom", "Zoom", vscode.ViewColumn.Two, { enableScripts: true });
-    iconspath = zoomPanel.webview.asWebviewUri(vscode.Uri.joinPath(extension.extensionUri, "dist", "icons"));
+    iconspath = zoomPanel.webview.asWebviewUri(vscode.Uri.joinPath(extension.extensionUri, "icons"));
 
     // Start refreshing the panels
     refreshing = setInterval(refresh, 250);

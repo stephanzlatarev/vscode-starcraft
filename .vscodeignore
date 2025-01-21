@@ -1,8 +1,0 @@
-**/node_modules
-
-extension/
-game/
-icons/
-
-.gitignore
-webpack.config.js
