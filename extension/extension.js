@@ -14,7 +14,7 @@ const IS_VESPENE_GEYSER = {};
 const Response = sc2.lookupType("Response");
 
 let extension;
-let imagepath;
+let iconspath;
 let viewbox = { width: 600, height: 600 };
 let mouse = { x: 0, y: 0 };
 let mapbox = { top: 0, left: 0, width: 250, height: 250 };
@@ -26,12 +26,10 @@ let mapPanel;
 let zoomPanel;
 let refreshing;
 
-async function activate(context) {
+function activate(context) {
   extension = context;
 
-  await startGame();
-
-  context.subscriptions.push(vscode.commands.registerCommand("starcraft.start.game", () => {
+  context.subscriptions.push(vscode.commands.registerCommand("starcraft.startGame", () => {
     // Create map panel
     mapPanel = vscode.window.createWebviewPanel("starcraft.map", "AcropolisAIE", vscode.ViewColumn.One, { enableScripts: true });
     mapPanel.webview.onDidReceiveMessage(function(message) {
@@ -52,10 +50,13 @@ async function activate(context) {
 
     // Create zoom panel
     zoomPanel = vscode.window.createWebviewPanel("starcraft.zoom", "Zoom", vscode.ViewColumn.Two, { enableScripts: true });
-    imagepath = zoomPanel.webview.asWebviewUri(vscode.Uri.joinPath(extension.extensionUri, "unit"));
+    iconspath = zoomPanel.webview.asWebviewUri(vscode.Uri.joinPath(extension.extensionUri, "dist", "icons"));
 
     // Start refreshing the panels
     refreshing = setInterval(refresh, 250);
+
+    // Start the game
+    startGame();
   }));
 }
 
@@ -74,7 +75,6 @@ function renderView(zoom) {
   const html = [
     "<!DOCTYPE html>",
     "<html>",
-    "<style>#brokenImage { visibility: hidden; }</style>",
     "<body>",
     clock(),
     hint.join(" | "),
@@ -132,7 +132,7 @@ function renderView(zoom) {
       }
 
       if (UNIT_TYPE[unit.type]) {
-        const href = imagepath + "/" + UNIT_TYPE[unit.type] + ".webp";
+        const href = iconspath + "/" + UNIT_TYPE[unit.type] + ".webp";
         const onerror = `onerror="this.style.display='none'"`;
 
         if (size) {
@@ -214,51 +214,58 @@ function connectToGame(attempts) {
 }
 
 async function startGame() {
-  spawnSync("docker", ["run", "--name", "starcraft", "-d", "-p", "5000:5000", "-p", "5001:5001", "starcraft"]);
+  spawnSync("docker", ["run", "--name", "starcraft", "-d", "-p", "5000:5000", "-p", "5001:5001", "stephanzlatarev/starcraft"]);
 
   const connection = await connectToGame(30);
 
   connection.on("message", function(data) {
-    try {
-      const response = Response.decode(data);
+    const response = decodeResponse(data);
 
-      if (response.gameInfo && response.gameInfo.startRaw) {
-        const { p0, p1 } = response.gameInfo.startRaw.playableArea;
+    if (!response) return;
 
-        mapbox.top = p0.y;
-        mapbox.left = p0.x;
-        mapbox.width = p1.x - p0.x;
-        mapbox.height = p1.y - p0.y;
-      }
+    if (response.gameInfo && response.gameInfo.startRaw) {
+      const { p0, p1 } = response.gameInfo.startRaw.playableArea;
 
-      if (response.observation && response.observation.observation) {
-        loop = response.observation.observation.gameLoop;
-        units = response.observation.observation.rawData.units.map(unit => ({
-          type: unit.unitType,
-          owner: unit.owner,
-          x: unit.pos.x,
-          y: unit.pos.y,
-          z: unit.pos.z,
-          r: unit.radius,
-        }));
-        units.sort((a, b) => ((a.z - b.z) || (b.owner - a.owner) || (b.r - a.r)));
-      }
+      mapbox.top = p0.y;
+      mapbox.left = p0.x;
+      mapbox.width = p1.x - p0.x;
+      mapbox.height = p1.y - p0.y;
+    }
 
-      if (response.data && response.data.units) {
-        for (const unit of response.data.units) {
-          if (unit.unitId && unit.name) {
-            UNIT_TYPE[unit.unitId] = unit.name;
+    if (response.observation && response.observation.observation) {
+      loop = response.observation.observation.gameLoop;
+      units = response.observation.observation.rawData.units.map(unit => ({
+        type: unit.unitType,
+        owner: unit.owner,
+        x: unit.pos.x,
+        y: unit.pos.y,
+        z: unit.pos.z,
+        r: unit.radius,
+      }));
+      units.sort((a, b) => ((a.z - b.z) || (b.owner - a.owner) || (b.r - a.r)));
+    }
 
-            if (unit.name.indexOf("MineralField") >= 0) IS_MINERAL_FIELD[unit.unitId] = true;
-            if (unit.name.indexOf("Geyser") >= 0) IS_VESPENE_GEYSER[unit.unitId] = true;
-            if (unit.attributes && (unit.attributes.indexOf(8) >= 0)) IS_BUILDING[unit.unitId] = true;
-          }
+    if (response.data && response.data.units) {
+      for (const unit of response.data.units) {
+        if (unit.unitId && unit.name) {
+          UNIT_TYPE[unit.unitId] = unit.name;
+
+          if (unit.name.indexOf("MineralField") >= 0) IS_MINERAL_FIELD[unit.unitId] = true;
+          if (unit.name.indexOf("Geyser") >= 0) IS_VESPENE_GEYSER[unit.unitId] = true;
+          if (unit.attributes && (unit.attributes.indexOf(8) >= 0)) IS_BUILDING[unit.unitId] = true;
         }
       }
-    } catch (error) {
-      console.error(error);
     }
   });
+}
+
+function decodeResponse(data) {
+  try {
+    return Response.decode(data);
+  } catch (error) {
+    console.error("Unable to decode response:");
+    console.error(error);
+  }
 }
 
 function stopGame() {
