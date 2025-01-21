@@ -15,7 +15,7 @@ RUN apt-get update \
     && rm -rf /StarCraftII/Battle.net/* \
     && rm -rf /StarCraftII/Versions/Shaders*
 
-COPY ./Maps /StarCraftII/Maps
+COPY ./maps /StarCraftII/Maps
 
 WORKDIR /app
 
