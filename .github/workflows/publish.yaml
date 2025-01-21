@@ -22,4 +22,4 @@ jobs:
           cd dist
           sed -i -e 's|0.0.0|${{ steps.version.outputs.tag }}|g' package.json
           vsce package --no-dependencies
-          vcse publish -p ${{ secrets.VSCE_TOKEN }}
+          vsce publish -p ${{ secrets.VSCE_TOKEN }}
