@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Select release version
         id: version
-        run: printf 'tag=1.0.%(%Y%m%d%H%M)T' >> $GITHUB_OUTPUT
+        run: printf 'tag=1.%(%Y%m%d)T.%(%H%M)T' >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v2
 
@@ -22,4 +22,4 @@ jobs:
           cd dist
           sed -i -e 's|0.0.0|${{ steps.version.outputs.tag }}|g' package.json
           vsce package --no-dependencies
-          vsce publish -p ${{ secrets.VSCE_TOKEN }}
+          vsce publish --no-dependencies -p ${{ secrets.VSCE_TOKEN }}
