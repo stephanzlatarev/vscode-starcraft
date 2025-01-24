@@ -15,7 +15,7 @@
     "commands": [
       {
         "command": "starcraft.start",
-        "title": "Start StarCraft II for bots"
+        "title": "Start StarCraft II for a bot to play"
       }
     ],
     "customEditors": [
