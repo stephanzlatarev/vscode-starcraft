@@ -29,7 +29,8 @@ html, body {
 </body>
 
 <script>
-const CAMERA_ZOOM = 25 / 1000;
+const ZOOM_ICONS_THRESHOLD = 100;
+const ZOOM_RATIO = 35 / 1000;
 const OWNER_COLOR = ["white", "blue", "red"];
 
 const map = document.getElementById("map");
@@ -62,7 +63,7 @@ function setViewBox(box) {
   if ((box === viewbox) || ((box.left === viewbox.left) && (box.top === viewbox.top) && (box.width === viewbox.width) && (box.height === viewbox.height))) {
     // Viewbox doesn't change
   } else if ((box.x >= 0) && (box.y >= 0)) {
-    const width = window.innerWidth * CAMERA_ZOOM;
+    const width = window.innerWidth * ZOOM_RATIO;
     const height = width * window.innerHeight / window.innerWidth;
 
     viewbox = {
@@ -117,7 +118,7 @@ function setUnits(units) {
   for (const unit of units) {
     const color = OWNER_COLOR[unit.owner] || "white";
 
-    if (window.innerWidth >= 800) {
+    if (viewbox.width < ZOOM_ICONS_THRESHOLD) {
       if (unit.type) {
         let x, y, width, height;
         let isBuilding, isUnit;
