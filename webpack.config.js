@@ -31,9 +31,11 @@ module.exports = {
   plugins: [
     new copy({
       patterns: [
+        "icon.png",
         "LICENSE",
         "package.json",
         "README.md",
+        { from: "html", to: "html" },
         { from: "icons", to: "icons" }
       ]
     })

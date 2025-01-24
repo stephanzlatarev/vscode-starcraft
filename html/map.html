@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+
+<style>
+html, body {
+  margin: 0px;
+  padding: 0px;
+  overflow: hidden;
+}
+#mouse {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: transparent;
+}
+</style>
+
+<body>
+<svg id="map" width="100" height="100" viewBox="0 0 0 0" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="1000" height="1000" fill="black" />
+  <g id="grid" style="stroke: none"></g>
+  <g id="units"></g>
+  <g id="focus" style="stroke: gold; stroke-width: 0.4; fill: none"></g>
+</svg>
+<div id="mouse" />
+</body>
+
+<script>
+const CAMERA_ZOOM = 25 / 1000;
+const OWNER_COLOR = ["white", "blue", "red"];
+
+const map = document.getElementById("map");
+const layerFocus = document.getElementById("focus");
+const layerGrid = document.getElementById("grid");
+const layerUnits = document.getElementById("units");
+const layerMouse = document.getElementById("mouse");
+const vscode = acquireVsCodeApi();
+
+let viewbox = { left: 0, top: 0, width: 0, height: 0 };
+let camera = null;
+let iconspath = null;
+let grid = null;
+
+function setIconsPath(path) {
+  iconspath = path;
+}
+
+function resetCamera() {
+  viewbox = { left: 0, top: 0, width: 0, height: 0 };
+  grid = null;
+
+  map.setAttribute("viewBox", [viewbox.left, viewbox.top, viewbox.width, viewbox.height].join(" "));
+  layerFocus.replaceChildren();
+  layerGrid.replaceChildren();
+  layerUnits.replaceChildren();
+}
+
+function setViewBox(box) {
+  if ((box === viewbox) || ((box.left === viewbox.left) && (box.top === viewbox.top) && (box.width === viewbox.width) && (box.height === viewbox.height))) {
+    // Viewbox doesn't change
+  } else if ((box.x >= 0) && (box.y >= 0)) {
+    const width = window.innerWidth * CAMERA_ZOOM;
+    const height = width * window.innerHeight / window.innerWidth;
+
+    viewbox = {
+      left: box.x - width / 2,
+      top: box.y - height / 2,
+      width: width,
+      height: height,
+    };
+
+    camera = { ... box };
+  } else {
+    viewbox = { ...box };
+    camera = null;
+  }
+
+  if (grid) {
+    const minx = Math.floor(viewbox.left);
+    const maxx = Math.ceil(viewbox.left + viewbox.width);
+    const miny = Math.floor(viewbox.top);
+    const maxy = Math.ceil(viewbox.top + viewbox.height);
+    const svg = [];
+
+    for (let x = minx; x < maxx; x++) {
+      for (let y = miny; y < maxy; y++) {
+        const color = getCellColor(x, y);
+
+        if (color) {
+          svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="${color}" />`);
+        }
+      }
+    }
+
+    layerGrid.innerHTML = svg.join("");
+  }
+
+  map.setAttribute("viewBox", [viewbox.left, viewbox.top, viewbox.width, viewbox.height].join(" "));
+}
+
+function setFocus(x, y, span) {
+  layerFocus.innerHTML = `<rect x="${x - span / 2}" y=${y - span / 2} width="${span}" height="${span}" />`;
+}
+
+function setGrid(size, placement, pathing) {
+  grid = { size, placement, pathing };
+
+  setViewBox(viewbox);
+}
+
+function setUnits(units) {
+  const svg = [];
+
+  for (const unit of units) {
+    const color = OWNER_COLOR[unit.owner] || "white";
+
+    if (window.innerWidth >= 800) {
+      if (unit.type) {
+        let x, y, width, height;
+        let isBuilding, isUnit;
+        let fill = "black";
+
+        if (unit.type.kind === 2) {
+          // Mineral field
+          x = unit.x - 0.89;
+          y = unit.y - 0.39;
+          width = 1.78;
+          height = 0.78;
+          fill = color;
+        } else if (unit.type.kind === 3) {
+          // Vespene geyser
+          x = unit.x - 1.39;
+          y = unit.y - 1.39;
+          width = 2.78;
+          height = 2.78;
+          fill = color;
+        } else if ((unit.owner !== 1) && (unit.owner !== 2)) {
+          // Obstacle
+          x = unit.x - 0.89;
+          y = unit.y - 0.89;
+          width = 0.78;
+          height = 0.78;
+        } else if (unit.type.kind === 1) {
+          // Player's building
+          const size = Math.floor(unit.r + unit.r);
+          const radius = size / 2;
+
+          isBuilding = true;
+          x = unit.x - radius + 0.11;
+          y = unit.y - radius + 0.11;
+          width = size - 0.22;
+          height = size - 0.22;
+        } else {
+          // Player's unit
+          isUnit = true;
+          x = unit.x - unit.r + 0.1;
+          y = unit.y - unit.r + 0.1;
+          width = unit.r + unit.r - 0.2;
+          height = unit.r + unit.r - 0.2;
+        }
+
+        svg.push(`<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="0.4" ry="0.4" stroke="${color}" stroke-width="0.2" fill="${fill}" />`);
+
+        if (iconspath && (isBuilding || isUnit)) {
+          const href = iconspath + unit.type.name + ".webp";
+          const onerror = `onerror="this.style.display='none'"`;
+
+          if (isBuilding) {
+            x += 0.2;
+            y += 0.2;
+            width -= 0.4;
+            height -= 0.4;
+          } else if (isUnit) {
+            const radius = (unit.r - 0.1) / 1.5;
+            x = unit.x - radius;
+            y = unit.y - radius;
+            width = radius + radius;
+            height = width;
+          }
+
+          svg.push(`<image x="${x}" y="${y}" width="${width}" height="${height}" href="${href}" ${onerror} />`);
+        }
+      } else {
+        svg.push(`<circle cx="${unit.x}" cy="${unit.y}" r="${unit.r - 0.1}" stroke="${color}" stroke-width="0.2" fill="black" />`);
+      }
+    } else {
+      if (unit.type && (unit.owner !== 1) && (unit.owner !== 2) && (unit.type.kind !== 2) && (unit.type.kind !== 3)) {
+        // This is some kind of obstacle with unclear dimensions
+        svg.push(`<circle cx="${unit.x}" cy="${unit.y}" r="0.5" stroke="none" fill="${color}" />`);
+      } else {
+        svg.push(`<circle cx="${unit.x}" cy="${unit.y}" r="${unit.r}" stroke="none" fill="${color}" />`);
+      }
+    }
+  }
+
+  layerUnits.innerHTML = svg.join("");
+}
+
+function getCellColor(x, y) {
+  if (!grid || (x < 0) || (x > grid.size.x) || (y < 0) || (y > grid.size.y)) return "brown";
+
+  const index = x + y * grid.size.x;
+  const pos = 7 - index % 8;
+  const mask = 1 << pos;
+  const bit = Math.floor(index / 8);
+
+  if (grid.placement[bit] & mask) {
+    // Placement cell
+    return "#CCCCCC";
+  } else if (grid.pathing[bit] & mask) {
+    // Pathing cell
+    return "#AAAAAA";
+  }
+}
+
+window.addEventListener("resize", function(event) {
+  map.setAttribute("width", window.innerWidth);
+  map.setAttribute("height", window.innerHeight);
+
+  if (camera) setViewBox(camera);
+}, true);
+
+window.addEventListener("message", function({ data }) {
+  switch (data.type) {
+    case "focus": return setFocus(data.x, data.y, data.span);
+    case "icons": return setIconsPath(data.path);
+    case "grid": return setGrid(data.size, data.placement, data.pathing);
+    case "reset": return resetCamera();
+    case "units": return setUnits(data.units);
+    case "viewbox": return setViewBox(data.viewbox);
+  }
+});
+
+layerMouse.addEventListener("click", function(event) {
+  vscode.postMessage({
+    event: "click",
+    x: Math.round(viewbox.left + event.offsetX * viewbox.width / window.innerWidth),
+    y: Math.round(viewbox.top + event.offsetY * viewbox.height / window.innerHeight),
+  });
+});
+
+map.setAttribute("width", window.innerWidth);
+map.setAttribute("height", window.innerHeight);
+</script>
+
+</html>

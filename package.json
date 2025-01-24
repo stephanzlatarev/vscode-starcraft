@@ -1,6 +1,8 @@
 {
   "name": "vscode-starcraft",
-  "description": "Visual Studio Code extension for StarCraft II bots",
+  "icon": "icon.png",
+  "displayName": "StarCraft II for Bots",
+  "description": "Run your bots with StarCraft II",
   "version": "0.0.0",
   "publisher": "stephanzlatarev",
   "repository": "https://github.com/stephanzlatarev/vscode-starcraft",
@@ -12,10 +14,38 @@
   "contributes": {
     "commands": [
       {
-        "command": "starcraft.startGame",
-        "title": "StarCraft II: Start game"
+        "command": "starcraft.start",
+        "title": "Start StarCraft II for bots"
       }
-    ]
+    ],
+    "customEditors": [
+      {
+        "viewType": "starcraft.replay",
+        "displayName": "StarCraft II Replay Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.SC2Replay"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "starcraft.controls",
+          "type": "webview",
+          "name": "Game Controls",
+          "when": "starcraft.isInGame"
+        },
+        {
+          "id": "starcraft.minimap",
+          "type": "webview",
+          "name": "Minimap",
+          "when": "starcraft.isInGame"
+        }
+      ]
+    }
   },
   "scripts": {
     "package": "webpack --mode production --devtool hidden-source-map"
