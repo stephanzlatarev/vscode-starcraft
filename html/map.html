@@ -22,6 +22,12 @@ html, body {
 .unit {
   clip-path: inset(0 0 0 0 round 50%);
 }
+.wip {
+  filter: grayscale(80%);
+}
+.cloaked {
+  opacity: 0.5;
+}
 </style>
 
 <body>
@@ -165,13 +171,16 @@ function setUnits(units) {
           height = unit.r + unit.r;
         }
 
-        svg.push(`<rect class="${c}" x="${x}" y="${y}" width="${width}" height="${height}" fill="${color}" />`);
+        const wip = (unit.displayType === 4) ? "wip" : "";
+        const cloak = (unit.cloak !== 3) ? "cloaked" : "";
+
+        svg.push(`<rect class="${c} ${wip} ${cloak}" x="${x}" y="${y}" width="${width}" height="${height}" fill="${color}" />`);
 
         if (iconspath && ((unit.owner === 1) || (unit.owner === 2))) {
           const href = iconspath + unit.type.name + ".webp";
           const onerror = `onerror="this.style.display='none'"`;
 
-          svg.push(`<image class="${c}" x="${x}" y="${y}" width="${width * 0.95}" height="${height * 0.95}" href="${href}" ${onerror} />`);
+          svg.push(`<image class="${c} ${wip} ${cloak}" x="${x}" y="${y}" width="${width * 0.95}" height="${height * 0.95}" href="${href}" ${onerror} />`);
         }
       } else {
         svg.push(`<circle cx="${unit.x}" cy="${unit.y}" r="${unit.r - 0.1}" stroke="${color}" stroke-width="0.2" fill="black" />`);

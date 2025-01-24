@@ -52,6 +52,8 @@ class Game {
       y: unit.pos.y,
       z: unit.pos.z,
       r: unit.radius,
+      display: unit.displayType,
+      cloak: unit.cloak,
     }));
     units.sort((a, b) => ((a.z - b.z) || (b.owner - a.owner) || (b.r - a.r)));
 
