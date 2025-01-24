@@ -16,6 +16,12 @@ html, body {
   overflow: auto;
   background-color: transparent;
 }
+.building {
+  clip-path: inset(0 0 0 0 round 10%);
+}
+.unit {
+  clip-path: inset(0 0 0 0 round 50%);
+}
 </style>
 
 <body>
@@ -120,69 +126,52 @@ function setUnits(units) {
 
     if (viewbox.width < ZOOM_ICONS_THRESHOLD) {
       if (unit.type) {
+        let c = "building";
         let x, y, width, height;
-        let isBuilding, isUnit;
-        let fill = "black";
 
         if (unit.type.kind === 2) {
           // Mineral field
-          x = unit.x - 0.89;
-          y = unit.y - 0.39;
-          width = 1.78;
-          height = 0.78;
-          fill = color;
+          x = unit.x - 1;
+          y = unit.y - 0.5;
+          width = 2;
+          height = 1;
         } else if (unit.type.kind === 3) {
           // Vespene geyser
-          x = unit.x - 1.39;
-          y = unit.y - 1.39;
-          width = 2.78;
-          height = 2.78;
-          fill = color;
+          x = unit.x - 1.5;
+          y = unit.y - 1.5;
+          width = 3;
+          height = 3;
         } else if ((unit.owner !== 1) && (unit.owner !== 2)) {
           // Obstacle
-          x = unit.x - 0.89;
-          y = unit.y - 0.89;
-          width = 0.78;
-          height = 0.78;
+          x = unit.x - 0.5;
+          y = unit.y - 0.5;
+          width = 1;
+          height = 1;
         } else if (unit.type.kind === 1) {
           // Player's building
           const size = Math.floor(unit.r + unit.r);
           const radius = size / 2;
 
-          isBuilding = true;
-          x = unit.x - radius + 0.11;
-          y = unit.y - radius + 0.11;
-          width = size - 0.22;
-          height = size - 0.22;
+          x = unit.x - radius;
+          y = unit.y - radius;
+          width = size;
+          height = size;
         } else {
           // Player's unit
-          isUnit = true;
-          x = unit.x - unit.r + 0.1;
-          y = unit.y - unit.r + 0.1;
-          width = unit.r + unit.r - 0.2;
-          height = unit.r + unit.r - 0.2;
+          c = "unit";
+          x = unit.x - unit.r;
+          y = unit.y - unit.r;
+          width = unit.r + unit.r;
+          height = unit.r + unit.r;
         }
 
-        svg.push(`<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="0.4" ry="0.4" stroke="${color}" stroke-width="0.2" fill="${fill}" />`);
+        svg.push(`<rect class="${c}" x="${x}" y="${y}" width="${width}" height="${height}" fill="${color}" />`);
 
-        if (iconspath && (isBuilding || isUnit)) {
+        if (iconspath && ((unit.owner === 1) || (unit.owner === 2))) {
           const href = iconspath + unit.type.name + ".webp";
           const onerror = `onerror="this.style.display='none'"`;
 
-          if (isBuilding) {
-            x += 0.2;
-            y += 0.2;
-            width -= 0.4;
-            height -= 0.4;
-          } else if (isUnit) {
-            const radius = (unit.r - 0.1) / 1.5;
-            x = unit.x - radius;
-            y = unit.y - radius;
-            width = radius + radius;
-            height = width;
-          }
-
-          svg.push(`<image x="${x}" y="${y}" width="${width}" height="${height}" href="${href}" ${onerror} />`);
+          svg.push(`<image class="${c}" x="${x}" y="${y}" width="${width * 0.95}" height="${height * 0.95}" href="${href}" ${onerror} />`);
         }
       } else {
         svg.push(`<circle cx="${unit.x}" cy="${unit.y}" r="${unit.r - 0.1}" stroke="${color}" stroke-width="0.2" fill="black" />`);
