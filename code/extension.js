@@ -90,9 +90,10 @@ async function start(container, document) {
     }
   }
 
-  camera.attach(container);
-
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", true);
+
+  camera.attach(container);
+  controls.showControls(!!document);
 }
 
 function deactivate() {

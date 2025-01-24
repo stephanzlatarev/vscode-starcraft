@@ -29,9 +29,11 @@
       <span id="supply">30</span>
     </span>
   </div>
-  <div id="pause" class="button" style="display: none">&#x23F8; pause</div>
-  <div id="resume" class="button" style="display: none">&#x23F5; resume</div>
-  <div id="skip" class="button" style="display: none">&#x23ED; skip 1min</div>
+  <div id="controls">
+    <div id="pause" class="button" style="display: none">&#x23F8; pause</div>
+    <div id="resume" class="button" style="display: none">&#x23F5; resume</div>
+    <div id="skip" class="button" style="display: none">&#x23ED; skip 1min</div>
+  </div>
 </body>
 
 <script>
@@ -40,6 +42,10 @@ const LOOPS_PER_MINUTE = LOOPS_PER_SECOND * 60;
 
 const vscode = acquireVsCodeApi();
 let isStarted;
+
+function showControls(flag) {
+  document.getElementById("controls").style.display = flag ? "block" : "none";
+}
 
 function setObservation(loop, player) {
   if (loop >= 0) {
@@ -67,6 +73,7 @@ function setObservation(loop, player) {
 
 window.addEventListener("message", function({ data }) {
   switch (data.type) {
+    case "controls": return showControls(data.enabled);
     case "observation": return setObservation(data.loop, data.player);
   }
 });

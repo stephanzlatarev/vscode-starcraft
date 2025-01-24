@@ -24,6 +24,7 @@ class Controls {
       // Clear cached data so that it's posted again
       this.observation = null;
 
+      this.showControls(this.isShowingControls);
       this.refresh();
     } else if (this.timeout) {
       clearTimeout(this.timeout);
@@ -46,7 +47,13 @@ class Controls {
       this.observation = observation;
     }
 
+    this.container.webview.postMessage({ type: "controls", enabled: this.isShowingControls });
+
     this.timeout = setTimeout(this.refresh.bind(this), 40);
+  }
+
+  showControls(flag) {
+    this.isShowingControls = !!flag;
   }
 
 }
