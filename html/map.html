@@ -191,7 +191,7 @@ function setUnits(units) {
         // This is some kind of obstacle with unclear dimensions
         svg.push(`<circle cx="${unit.x}" cy="${unit.y}" r="0.5" stroke="none" fill="${color}" />`);
       } else {
-        svg.push(`<circle cx="${unit.x}" cy="${unit.y}" r="${unit.r}" stroke="none" fill="${color}" />`);
+        svg.push(`<circle cx="${unit.x}" cy="${unit.y}" r="${Math.max(unit.r, 1)}" stroke="none" fill="${color}" />`);
       }
     }
   }
