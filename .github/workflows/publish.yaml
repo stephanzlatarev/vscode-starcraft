@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Select release version
         id: version
-        run: printf 'tag=1.%(%Y%m%d)T.%(%H%M)T' >> $GITHUB_OUTPUT
+        run: printf 'tag=1.%(%Y%m%d)T.1%(%H%M)T' >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v2
 
@@ -32,8 +32,3 @@ jobs:
         run: |
           pwd
           gh release create ${{ steps.version.outputs.tag }} ./dist/vscode-starcraft-${{ steps.version.outputs.tag }}.vsix --generate-notes
-
-      - name: Publish to VSCodium
-        run: |
-          docker pull lscr.io/linuxserver/vscodium:latest
-          docker run --rm -e DONT_PROMPT_WSL_INSTALL=dont -v ./dist:/dist lscr.io/linuxserver/vscodium codium --no-sandbox --user-data-dir=/tmp --install-extension /dist/vscode-starcraft-${{ steps.version.outputs.tag }}.vsix
