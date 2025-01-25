@@ -24,7 +24,7 @@ jobs:
 
       - name: Build and push
         run: |
-          /usr/bin/docker buildx build --platform linux/amd64,linux/arm64 --tag stephanzlatarev/starcraft:latest --push .
+          buildx build --tag stephanzlatarev/starcraft:latest --platform linux/amd64,linux/arm64 --push ./game
 
   vscode:
     runs-on: ubuntu-latest
