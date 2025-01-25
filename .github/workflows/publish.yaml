@@ -18,8 +18,22 @@ jobs:
       - run: npm install -g vsce
       - run: npm install
       - run: npm run package
-      - run: |
+
+      - name: Publish to Visual Studio Marketplace
+        run: |
           cd dist
           sed -i -e 's|0.0.0|${{ steps.version.outputs.tag }}|g' package.json
           vsce package --no-dependencies
           vsce publish --no-dependencies -p ${{ secrets.VSCE_TOKEN }}
+
+      - name: Release VSIX package in GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pwd
+          gh release create ${{ steps.version.outputs.tag }} ./dist/vscode-starcraft-${{ steps.version.outputs.tag }}.vsix --generate-notes
+
+      - name: Publish to VSCodium
+        run: |
+          docker pull lscr.io/linuxserver/vscodium:latest
+          docker run --rm -e DONT_PROMPT_WSL_INSTALL=dont -v ./dist:/dist lscr.io/linuxserver/vscodium codium --no-sandbox --user-data-dir=/tmp --install-extension /dist/vscode-starcraft-${{ steps.version.outputs.tag }}.vsix
