@@ -6,20 +6,53 @@ on:
       - main
 
 jobs:
-  publish:
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: stephanzlatarev
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: "{{defaultContext}}:game"
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: stephanzlatarev/starcraft:latest
+
+  vscode:
     runs-on: ubuntu-latest
     steps:
       - name: Select release version
         id: version
-        run: printf 'tag=1.%(%Y%m%d)T.%(%H%M)T' >> $GITHUB_OUTPUT
+        run: printf 'tag=1.%(%Y%m%d)T.1%(%H%M)T' >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v2
 
       - run: npm install -g vsce
       - run: npm install
       - run: npm run package
-      - run: |
+
+      - name: Publish to Visual Studio Marketplace
+        run: |
           cd dist
           sed -i -e 's|0.0.0|${{ steps.version.outputs.tag }}|g' package.json
           vsce package --no-dependencies
           vsce publish --no-dependencies -p ${{ secrets.VSCE_TOKEN }}
+
+      - name: Release VSIX package in GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pwd
+          gh release create ${{ steps.version.outputs.tag }} ./dist/vscode-starcraft-${{ steps.version.outputs.tag }}.vsix --generate-notes
