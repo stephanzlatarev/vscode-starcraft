@@ -11,15 +11,17 @@ RUN apt-get update \
     && apt remove --yes wget unzip \ 
     && apt autoremove --yes \
     && ln -s /StarCraftII/Maps /StarCraftII/maps \
+    && rm -rf /StarCraftII/maps/* \
     && rm -rf /StarCraftII/Battle.net/* \
     && rm -rf /StarCraftII/Versions/Shaders*
 
-COPY ./maps /StarCraftII/Maps
+COPY games/maps /StarCraftII/Maps
 
 WORKDIR /app
 
-COPY package.json ./package.json
-COPY go.js ./go.js
+COPY games/package.json ./package.json
+COPY games/go.js ./go.js
+
 RUN npm install
 
 ENTRYPOINT ["node", "go.js"]
