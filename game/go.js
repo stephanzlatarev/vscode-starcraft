@@ -57,7 +57,10 @@ game.stderr.on("data", function(data) {
   }
 });
 
-game.on("close", function() {
+game.on("close", function(details) {
   console.error("StarCraft II exited");
-  process.exit(code);
+
+  if (details) console.error(details);
+
+  process.exit(1);
 });
