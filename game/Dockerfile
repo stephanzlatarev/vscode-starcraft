@@ -11,7 +11,6 @@ RUN apt-get update \
     && apt remove --yes wget unzip \ 
     && apt autoremove --yes \
     && ln -s /StarCraftII/Maps /StarCraftII/maps \
-    && rm -rf /StarCraftII/maps/* \
     && rm -rf /StarCraftII/Battle.net/* \
     && rm -rf /StarCraftII/Versions/Shaders*
 
