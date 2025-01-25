@@ -74,7 +74,7 @@ async function start(container, document) {
     [() => game.init(), "Start StarCraft II"],
     document ? [() => files.copyReplayFile(document.uri), "Get replay file"] : null,
     [() => (document ? game.replay(files.getFileName(document.uri)) : game.play()), "Connect to StarCraft II"],
-    [() => game.start(), document ? "Start the replay" : "Wait for the bot to create and join the game"],
+    [() => game.start(), document ? "Start the replay" : "Wait for the bot to connect to 127.0.0.1:5000, create the game and join it"],
   ];
 
   const checklist = new Checklist(container);
