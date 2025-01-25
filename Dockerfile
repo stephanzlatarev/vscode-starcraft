@@ -15,12 +15,12 @@ RUN apt-get update \
     && rm -rf /StarCraftII/Battle.net/* \
     && rm -rf /StarCraftII/Versions/Shaders*
 
-COPY games/maps /StarCraftII/Maps
+COPY game/maps /StarCraftII/Maps
 
 WORKDIR /app
 
-COPY games/package.json ./package.json
-COPY games/go.js ./go.js
+COPY game/package.json ./package.json
+COPY game/go.js ./go.js
 
 RUN npm install
 
