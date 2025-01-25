@@ -39,6 +39,7 @@ jobs:
 
       - uses: actions/checkout@v2
 
+      - run: npm install -g npx
       - run: npm install -g vsce
       - run: npm install
       - run: npm run package
@@ -54,5 +55,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pwd
           gh release create ${{ steps.version.outputs.tag }} ./dist/vscode-starcraft-${{ steps.version.outputs.tag }}.vsix --generate-notes
+
+      - name: Publish to Open VSX Registry
+        run: |
+          npx ovsx publish ./dist/vscode-starcraft-${{ steps.version.outputs.tag }}.vsix -p ${{ secrets.OVSX_TOKEN }}
