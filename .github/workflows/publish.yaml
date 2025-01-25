@@ -26,6 +26,11 @@ jobs:
 
       - name: Build and push
         run: |
+          pwd
+          ls -l
+          ls -l /home/runner/work/vscode-starcraft/vscode-starcraft
+          echo ${GITHUB_WORKSPACE}
+          ls -l ${GITHUB_WORKSPACE}
           docker buildx build --tag stephanzlatarev/starcraft:latest --platform linux/amd64,linux/arm64 --push ./game
 
   vscode:
