@@ -1,7 +1,5 @@
 FROM node:slim
 
-WORKDIR /
-
 RUN apt-get update \
     && apt-get upgrade --assume-yes --quiet=2 \
     && apt-get install --assume-yes --no-install-recommends --no-show-upgraded wget unzip \
@@ -16,11 +14,10 @@ RUN apt-get update \
     && rm -rf /StarCraftII/Versions/Shaders*
 
 COPY game/maps /StarCraftII/Maps
+COPY game/package.json /app/package.json
+COPY game/go.js /app/go.js
 
 WORKDIR /app
-
-COPY game/package.json ./package.json
-COPY game/go.js ./go.js
 
 RUN npm install
 
