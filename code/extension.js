@@ -8,6 +8,7 @@ const minimap = require("./minimap.js");
 const Checklist = require("./checklist.js");
 
 let activeContainer;
+let isGamePaused = false;
 
 function activate(context) {
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);
@@ -94,6 +95,20 @@ async function start(container, document) {
 
   camera.attach(container);
   controls.showControls(!!document);
+  
+  container.webview.onDidReceiveMessage(function(message) {
+    if (message.event === "pause") {
+      if (isGamePaused) {
+        isGamePaused = false;
+        game.resume();
+        controls.resume();
+      } else {
+        isGamePaused = true;
+        game.pause();
+        controls.pause();
+      }
+    }
+  });
 }
 
 function deactivate() {

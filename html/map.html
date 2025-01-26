@@ -239,7 +239,9 @@ window.addEventListener("message", function({ data }) {
 const IS_ARROW_KEY = { ArrowLeft: true, ArrowRight: true, ArrowUp: true, ArrowDown: true };
 window.addEventListener("keydown", function(event) {
   const isHold = lastKeyDown && (event.code === lastKeyCode);
-  if (isHold && IS_ARROW_KEY[event.code]) {
+  if (event.code === "Space") {
+    vscode.postMessage({ event: "pause" });
+  } else if (isHold && IS_ARROW_KEY[event.code]) {
     moveCamera(event.code, 1);
   }
   lastKeyCode = event.code;

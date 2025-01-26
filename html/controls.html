@@ -71,25 +71,35 @@ function setObservation(loop, player) {
   }
 }
 
+function setPaused() {
+  document.getElementById("pause").style.display = "none";
+  document.getElementById("skip").style.display = "none";
+  document.getElementById("resume").style.display = "block";
+}
+
+function setResumed() {
+  document.getElementById("resume").style.display = "none";
+  document.getElementById("pause").style.display = "block";
+  document.getElementById("skip").style.display = "block";
+}
+
 window.addEventListener("message", function({ data }) {
   switch (data.type) {
     case "controls": return showControls(data.enabled);
     case "observation": return setObservation(data.loop, data.player);
+    case "pause": return setPaused();
+    case "resume": return setResumed();
   }
 });
 
 document.getElementById("pause").addEventListener("click", function(event) {
   vscode.postMessage({ event: "pause" });
-  document.getElementById("pause").style.display = "none";
-  document.getElementById("skip").style.display = "none";
-  document.getElementById("resume").style.display = "block";
+  setPaused();
 });
 
 document.getElementById("resume").addEventListener("click", function(event) {
   vscode.postMessage({ event: "resume" });
-  document.getElementById("resume").style.display = "none";
-  document.getElementById("pause").style.display = "block";
-  document.getElementById("skip").style.display = "block";
+  setResumed();
 });
 
 document.getElementById("skip").addEventListener("click", function(event) {

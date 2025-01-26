@@ -56,6 +56,14 @@ class Controls {
     this.isShowingControls = !!flag;
   }
 
+  pause() {
+    if (this.container) this.container.webview.postMessage({ type: "pause" });
+  }
+
+  resume() {
+    if (this.container) this.container.webview.postMessage({ type: "resume" });
+  }
+
 }
 
 module.exports = new Controls();
