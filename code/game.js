@@ -3,10 +3,10 @@ const sc2def = require("@node-sc2/proto/root/index.js");
 const sc2api = require("@node-sc2/proto");
 const WebSocket = require("ws");
 const files = require("./files.js");
+const Types = require("./types.js");
 
 const Response = sc2def.lookupType("Response");
 
-const types = new Map();
 const state = new Map();
 
 class Game {
@@ -46,7 +46,7 @@ class Game {
     if (!observation) return [];
 
     const units = observation.observation.rawData.units.map(unit => ({
-      type: types.get(unit.unitType),
+      type: Types.get(unit.unitType),
       owner: unit.owner,
       x: unit.pos.x,
       y: unit.pos.y,
@@ -75,7 +75,7 @@ class Game {
   reset() {
     if (this.player) this.player.close();
 
-    types.clear();
+    Types.clear();
     state.clear();
   }
 
@@ -154,7 +154,7 @@ class ReplayPlayer extends Player {
     const replayInfo = await this.client.replayInfo({ replayPath: this.file });
     const duration = replayInfo.gameDurationLoops;
 
-    readUnitTypes(await this.client.data({ unitTypeId: true }));
+    Types.read(await this.client.data({ unitTypeId: true }));
 
     state.set("gameInfo", await this.client.gameInfo());
 
@@ -220,7 +220,7 @@ class GamePlayer extends Player {
               if (!isGameCreated && (key === "joinGame")) {
                 isGameCreated = true;
               } else if (key === "data") {
-                if (value.units) readUnitTypes(value);
+                Types.read(value);
               }
             }
           }
@@ -248,33 +248,6 @@ function open() {
 
 function sleep(millis) {
   return new Promise(resolve => setTimeout(resolve, millis));
-}
-
-function readUnitTypes(data) {
-  for (const unit of data.units) {
-    if (unit.unitId && unit.name) {
-      const type = {
-        name: mapUnitName(unit.name),
-        kind: 0,
-      };
-
-      if (unit.name.indexOf("MineralField") >= 0) {
-        type.kind = 2;
-      } else if (unit.name.indexOf("Geyser") >= 0) {
-        type.kind = 3;
-      } else if (unit.attributes && (unit.attributes.indexOf(8) >= 0)) {
-        type.kind = 1; // Building
-      }
-
-      types.set(unit.unitId, type);
-    }
-  }
-}
-
-function mapUnitName(name) {
-  if (name === "SupplyDepotLowered") return "SupplyDepot";
-
-  return name;
 }
 
 module.exports = new Game();

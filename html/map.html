@@ -176,8 +176,8 @@ function setUnits(units) {
 
         svg.push(`<rect class="${c} ${wip} ${cloak}" x="${x}" y="${y}" width="${width}" height="${height}" fill="${color}" />`);
 
-        if (iconspath && ((unit.owner === 1) || (unit.owner === 2))) {
-          const href = iconspath + unit.type.name + ".webp";
+        if (iconspath && unit.type.alias) {
+          const href = iconspath + unit.type.alias + ".webp";
           const onerror = `onerror="this.style.display='none'"`;
 
           svg.push(`<image class="${c} ${wip} ${cloak}" x="${x}" y="${y}" width="${width * 0.95}" height="${height * 0.95}" href="${href}" ${onerror} />`);
