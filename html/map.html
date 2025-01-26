@@ -88,7 +88,7 @@ function setViewBox(box) {
       height: height,
     };
 
-    camera = { ... box };
+    camera = { ...box };
   } else {
     viewbox = { ...box };
     camera = null;
@@ -241,7 +241,7 @@ window.addEventListener("keydown", function(event) {
   const isHold = lastKeyDown && (event.code === lastKeyCode);
   if (event.code === "Space") {
     vscode.postMessage({ event: "pause" });
-  } else if (isHold && IS_ARROW_KEY[event.code]) {
+  } else if (camera && isHold && IS_ARROW_KEY[event.code]) {
     moveCamera(event.code, 1);
   }
   lastKeyCode = event.code;
@@ -249,7 +249,7 @@ window.addEventListener("keydown", function(event) {
   lastKeyHold = isHold;
 });
 window.addEventListener("keyup", function(event) {
-  if (lastKeyDown && !lastKeyHold && (event.code === lastKeyCode) && IS_ARROW_KEY[event.code]) {
+  if (camera && lastKeyDown && !lastKeyHold && (event.code === lastKeyCode) && IS_ARROW_KEY[event.code]) {
     moveCamera(event.code, 12);
   }
   lastKeyCode = event.code;
@@ -257,19 +257,22 @@ window.addEventListener("keyup", function(event) {
   lastKeyHold = false;
 });
 function moveCamera(arrow, step) {
-  const box = { ...viewbox };
-
   if (arrow === "ArrowLeft") {
-    box.left -= step;
+    camera.x -= step;
   } else if (arrow === "ArrowUp") {
-    box.top -= step;
+    camera.y -= step;
   } else if (arrow === "ArrowRight") {
-    box.left += step;
+    camera.x += step;
   } else if (arrow === "ArrowDown") {
-    box.top += step;
+    camera.y += step;
   }
 
-  setViewBox(box);
+  camera.x = Math.max(camera.x, 0);
+  camera.x = Math.min(camera.x, 250);
+  camera.y = Math.max(camera.y, 0);
+  camera.y = Math.min(camera.y, 250);
+
+  setViewBox(camera);
   vscode.postMessage({ type: "move", ...viewbox });
 }
 
