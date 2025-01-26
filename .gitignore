@@ -2,5 +2,6 @@
 dist/
 node_modules/
 package-lock.json
+todo.md
 
 *.SC2Replay
