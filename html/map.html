@@ -56,6 +56,9 @@ let viewbox = { left: 0, top: 0, width: 0, height: 0 };
 let camera = null;
 let iconspath = null;
 let grid = null;
+let lastKeyCode = null;
+let lastKeyDown = false;
+let lastKeyHold = false;
 
 function setIconsPath(path) {
   iconspath = path;
@@ -232,6 +235,40 @@ window.addEventListener("message", function({ data }) {
     case "viewbox": return setViewBox(data.viewbox);
   }
 });
+
+const IS_ARROW_KEY = { ArrowLeft: true, ArrowRight: true, ArrowUp: true, ArrowDown: true };
+window.addEventListener("keydown", function(event) {
+  const isHold = lastKeyDown && (event.code === lastKeyCode);
+  if (isHold && IS_ARROW_KEY[event.code]) {
+    moveCamera(event.code, 1);
+  }
+  lastKeyCode = event.code;
+  lastKeyDown = true;
+  lastKeyHold = isHold;
+});
+window.addEventListener("keyup", function(event) {
+  if (lastKeyDown && !lastKeyHold && (event.code === lastKeyCode) && IS_ARROW_KEY[event.code]) {
+    moveCamera(event.code, 12);
+  }
+  lastKeyCode = event.code;
+  lastKeyDown = false;
+  lastKeyHold = false;
+});
+function moveCamera(arrow, step) {
+  const box = { ...viewbox };
+
+  if (arrow === "ArrowLeft") {
+    box.left -= step;
+  } else if (arrow === "ArrowUp") {
+    box.top -= step;
+  } else if (arrow === "ArrowRight") {
+    box.left += step;
+  } else if (arrow === "ArrowDown") {
+    box.top += step;
+  }
+
+  setViewBox(box);
+}
 
 layerMouse.addEventListener("click", function(event) {
   vscode.postMessage({
