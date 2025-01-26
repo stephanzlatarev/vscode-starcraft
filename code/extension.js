@@ -97,7 +97,12 @@ async function start(container, document) {
   controls.showControls(!!document);
   
   container.webview.onDidReceiveMessage(function(message) {
-    if (message.event === "pause") {
+    if (message.type === "move") {
+      const x = Math.floor(message.left + message.width / 2);
+      const y = Math.floor(message.top + message.height / 2);
+
+      minimap.onCameraMove(x, y, camera.span);
+    } else if (message.event === "pause") {
       if (isGamePaused) {
         isGamePaused = false;
         game.resume();

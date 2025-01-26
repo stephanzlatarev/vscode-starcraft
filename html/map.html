@@ -270,6 +270,7 @@ function moveCamera(arrow, step) {
   }
 
   setViewBox(box);
+  vscode.postMessage({ type: "move", ...viewbox });
 }
 
 layerMouse.addEventListener("click", function(event) {

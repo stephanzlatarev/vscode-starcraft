@@ -4,6 +4,8 @@ const minimap = require("./minimap.js");
 
 class Camera {
 
+  span = 25;
+
   async attach(container) {
     this.container = container;
     this.focus = null;
@@ -25,10 +27,10 @@ class Camera {
 
   move(x, y) {
     if (this.container) {
-      this.container.webview.postMessage({ type: "viewbox", viewbox: { x, y, span: 25 } });
+      this.container.webview.postMessage({ type: "viewbox", viewbox: { x, y, span: this.span } });
       this.focus = { x, y};
 
-      minimap.onCameraMove(x, y, 25);
+      minimap.onCameraMove(x, y, this.span);
     }
   }
 
