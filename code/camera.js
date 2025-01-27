@@ -1,10 +1,12 @@
 const files = require("./files.js");
 const game = require("./game.js");
 const minimap = require("./minimap.js");
+const timer = require("./timer.js");
 
 class Camera {
 
   span = 25;
+  tick = this.refresh.bind(this);
 
   async attach(container) {
     this.container = container;
@@ -23,6 +25,8 @@ class Camera {
     this.container = null;
     this.gameInfo = null;
     this.observation = null;
+
+    timer.remove(this.tick);
   }
 
   move(x, y) {
@@ -35,6 +39,10 @@ class Camera {
   }
 
   renew() {
+    // Clear cached data so that it's posted again
+    this.gameInfo = null;
+    this.observation = null;
+
     if (this.container.visible) {
       this.container.webview.postMessage({ type: "icons", path: files.getIconsPath(this.container.webview) });
 
@@ -42,20 +50,13 @@ class Camera {
       if (this.focus) {
         this.move(this.focus.x, this.focus.y);
       }
-
-      // Clear cached data so that it's posted again
-      this.gameInfo = null;
-      this.observation = null;
-
-      this.refresh();
-    } else if (this.timeout) {
-      clearTimeout(this.timeout);
-      this.timeout = null;
     }
+
+    timer.add(this.tick, 80);
   }
 
   refresh() {
-    if (!this.container) return;
+    if (!this.container || !this.container.visible) return;
 
     const gameInfo = game.get("gameInfo");
     const observation = game.get("observation");
@@ -84,8 +85,6 @@ class Camera {
 
       this.observation = observation;
     }
-
-    this.timeout = setTimeout(this.refresh.bind(this), 80);
   }
 
 }

@@ -5,6 +5,7 @@ const docker = require("./docker.js");
 const files = require("./files.js");
 const game = require("./game.js");
 const minimap = require("./minimap.js");
+const timer = require("./timer.js");
 const Checklist = require("./checklist.js");
 
 let activeContainer;
@@ -54,6 +55,8 @@ function activate(context) {
       });
     }
   }));
+
+  timer.start();
 }
 
 async function start(container, document) {
@@ -117,6 +120,7 @@ async function start(container, document) {
 }
 
 function deactivate() {
+  timer.stop();
   game.stop();
 
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);

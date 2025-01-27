@@ -1,7 +1,10 @@
 const files = require("./files.js");
 const game = require("./game.js");
+const timer = require("./timer.js");
 
 class MiniMap {
+
+  tick = this.refresh.bind(this);
 
   async attach(container) {
     this.container = container;
@@ -11,7 +14,7 @@ class MiniMap {
     container.onDidChangeVisibility(this.renew.bind(this));
     container.onDidDispose(this.detach.bind(this));
 
-    this.refresh();
+    this.renew();
   }
 
   detach() {
@@ -27,23 +30,21 @@ class MiniMap {
   }
 
   renew() {
-    if (this.container.visible) {
-      // Clear cached data so that it's posted again
-      this.gameInfo = null;
-      this.observation = null;
+    // Clear cached data so that it's posted again
+    this.gameInfo = null;
+    this.observation = null;
 
-      this.refresh();
-    } else if (this.timeout) {
-      clearTimeout(this.timeout);
-      this.timeout = null;
-    }
+    timer.add(this.tick, 1000);
   }
 
   refresh() {
-    if (!this.container) return;
+    if (!this.container || !this.container.visible) return;
     
     const gameInfo = game.get("gameInfo");
     const observation = game.get("observation");
+
+    // The minimap refreshes rarely. Telling the timer nothing changed allows it to attempt a refresh sooner
+    let isChanged = false;
 
     if (gameInfo && (gameInfo !== this.gameInfo)) {
       const { p0, p1 } = gameInfo.startRaw.playableArea;
@@ -55,15 +56,17 @@ class MiniMap {
       this.container.webview.postMessage({ type: "grid", size: placementGrid.size, placement: placementGrid.data, pathing: pathingGrid.data });
 
       this.gameInfo = gameInfo;
+      isChanged = true;
     }
 
     if (observation && (observation !== this.observation)) {
       this.container.webview.postMessage({ type: "units", units: game.units() });
 
       this.observation = observation;
+      isChanged = true;
     }
 
-    this.timeout = setTimeout(this.refresh.bind(this), 1000);
+    return isChanged;
   }
 
 }

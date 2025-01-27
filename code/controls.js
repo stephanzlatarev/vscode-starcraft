@@ -1,7 +1,10 @@
 const files = require("./files.js");
 const game = require("./game.js");
+const timer = require("./timer.js");
 
 class Controls {
+
+  tick = this.refresh.bind(this);
 
   async attach(container) {
     this.container = container;
@@ -11,7 +14,7 @@ class Controls {
     container.onDidChangeVisibility(this.renew.bind(this));
     container.onDidDispose(this.detach.bind(this));
 
-    this.refresh();
+    this.renew();
   }
 
   detach() {
@@ -20,20 +23,16 @@ class Controls {
   }
 
   renew() {
-    if (this.container.visible) {
-      // Clear cached data so that it's posted again
-      this.observation = null;
+    // Clear cached data so that it's posted again
+    this.observation = null;
 
-      this.showControls(this.isShowingControls);
-      this.refresh();
-    } else if (this.timeout) {
-      clearTimeout(this.timeout);
-      this.timeout = null;
-    }
+    this.showControls(this.isShowingControls);
+
+    timer.add(this.tick, 40);
   }
 
   refresh() {
-    if (!this.container) return;
+    if (!this.container || !this.container.visible) return;
 
     const observation = game.get("observation");
 
@@ -48,8 +47,6 @@ class Controls {
     }
 
     this.container.webview.postMessage({ type: "controls", enabled: this.isShowingControls });
-
-    this.timeout = setTimeout(this.refresh.bind(this), 40);
   }
 
   showControls(flag) {
