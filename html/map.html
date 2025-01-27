@@ -23,9 +23,10 @@ html, body {
   clip-path: inset(0 0 0 0 round 50%);
 }
 .wip {
-  filter: grayscale(80%);
+  filter: grayscale(40%);
+  opacity: 0.7;
 }
-.cloaked {
+.cloak {
   opacity: 0.5;
 }
 </style>
@@ -68,7 +69,7 @@ function resetCamera() {
   viewbox = { left: 0, top: 0, width: 0, height: 0 };
   grid = null;
 
-  map.setAttribute("viewBox", [viewbox.left, viewbox.top, viewbox.width, viewbox.height].join(" "));
+  map.setAttribute("viewBox", "0 0 0 0");
   layerFocus.replaceChildren();
   layerGrid.replaceChildren();
   layerUnits.replaceChildren();
@@ -115,6 +116,8 @@ function setViewBox(box) {
   }
 
   map.setAttribute("viewBox", [viewbox.left, viewbox.top, viewbox.width, viewbox.height].join(" "));
+
+  vscode.postMessage({ type: "viewbox", viewbox });
 }
 
 function setFocus(x, y, span) {
@@ -129,6 +132,19 @@ function setGrid(size, placement, pathing) {
 
 function setUnits(units) {
   const svg = [];
+
+  if (viewbox.width < ZOOM_ICONS_THRESHOLD) {
+    for (const unit of units) {
+      const color = OWNER_COLOR[unit.owner] || "white";
+
+      if (unit.order) {
+        const order = unit.order;
+        const distance = Math.abs(unit.x - order.x) + Math.abs(unit.y - order.y);
+        const opacity = Math.max(1 - distance / 50, 0.1);
+        svg.push(`<line x1="${unit.x}" y1="${unit.y}" x2="${order.x}" y2="${order.y}" stroke="${color}" stroke-width="0.4" stroke-opacity="${opacity}" />`);
+      }
+    }
+  }
 
   for (const unit of units) {
     const color = OWNER_COLOR[unit.owner] || "white";
@@ -174,8 +190,8 @@ function setUnits(units) {
           height = unit.r + unit.r;
         }
 
-        const wip = (unit.displayType === 4) ? "wip" : "";
-        const cloak = (unit.cloak !== 3) ? "cloaked" : "";
+        const wip = unit.wip ? "wip" : "";
+        const cloak = unit.cloak ? "cloak" : "";
 
         svg.push(`<rect class="${c} ${wip} ${cloak}" x="${x}" y="${y}" width="${width}" height="${height}" fill="${color}" />`);
 

@@ -7,6 +7,7 @@ class Camera {
 
   span = 25;
   tick = this.refresh.bind(this);
+  renderedViewBox = null;
 
   async attach(container) {
     this.container = container;
@@ -17,6 +18,10 @@ class Camera {
     container.retainContextWhenHidden = true;
     container.onDidChangeViewState(this.renew.bind(this));
     container.onDidDispose(this.detach.bind(this));
+
+    container.webview.onDidReceiveMessage(function(message) {
+      if (message.type === "viewbox") this.viewbox = message.viewbox;
+    }.bind(this));
 
     this.renew();
   }
@@ -69,12 +74,11 @@ class Camera {
       this.gameInfo = gameInfo;
     }
 
-    if (observation && (observation !== this.observation)) {
-      const units = game.units();
+    if (observation && ((observation !== this.observation) || (this.renderedViewBox !== this.viewbox))) {
+      const units = game.units(this.viewbox);
 
       if (!this.focus) {
-        const playerId = observation.observation.playerCommon.playerId;
-        const homebase = units.find(unit => ((unit.owner === playerId) && (unit.r > 1)));
+        const homebase = units.find(unit => ((unit.owner === 1) && (unit.r > 1))) || game.units().find(unit => ((unit.owner === 1) && (unit.r > 1)));
 
         if (homebase) {
           this.move(homebase.x, homebase.y);
@@ -84,6 +88,7 @@ class Camera {
       this.container.webview.postMessage({ type: "units", units: units });
 
       this.observation = observation;
+      this.renderedViewBox = this.viewbox;
     }
   }
 
