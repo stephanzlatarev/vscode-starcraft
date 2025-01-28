@@ -8,6 +8,8 @@ Visualizes StarCraft II games and replays directly in you IDE.
 You don't need an installation of the game on your machine.
 You can improve the code of your bot and troubleshoot it without leaving Visual Studio Code.
 
+![Intro](docs/vscode-starcraft-intro.gif)
+
 To run a replay, drag and drop a replay file (*.SC2Replay) into the Editor area of Visual Studio Code. If you have the file in your workspace, open it with a click.
 
 To play a game with your bot, start StarCraft II by opening the command palette with `Ctrl+Shift+P` and typing `Start StarCraft II for a bot to play`.
