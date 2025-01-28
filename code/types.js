@@ -30,10 +30,6 @@ class Types {
       }
     }
   }
-
-  clear() {
-    this.types.clear();
-  }
 }
 
 function getKind(unit) {

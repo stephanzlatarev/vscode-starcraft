@@ -4,63 +4,98 @@ import { spawn } from "node:child_process";
 const PORT_API = Number(process.env.PORT_API) || 5000;
 const PORT_LOG = Number(process.env.PORT_LOG) || 5001;
 
-console.error("Listening for observer...");
-let observer;
+let socketToGame;
+let socketToBot;
+let socketToObserver;
 
-new WebSocketServer({ port: PORT_LOG }).on("connection", function(socket) {
-  console.error("Observer connected");
+let requester;
 
-  observer = socket;
+function listenForObservers() {
+  console.error("Listening for observer...");
 
-  socket.on("close", function() {
-    if (socket === observer) {
-      console.error("Observer disconnected");
+  new WebSocketServer({ port: PORT_LOG }).on("connection", function(socket) {
+    console.error("Observer connected");
 
-      observer = null;
+    socketToObserver = socket;
+
+    socket.on("error", console.error);
+
+    socket.on("message", function(data) {
+      sendToGame(socketToObserver, data);
+    });
+
+    socket.on("close", function() {
+      if (socket === socketToObserver) {
+        console.error("Observer disconnected");
+
+        socketToObserver = null;
+      }
+    });
+  });
+}
+
+function listenForBots() {
+  console.error("Listening for bots...");
+
+  new WebSocketServer({ port: PORT_API }).on("connection", function(socket) {
+    socketToBot = socket;
+
+    socketToBot.on("error", console.error);
+
+    socketToBot.on("message", function(data) {
+      if (socketToObserver) socketToObserver.send(data);
+
+      sendToGame(socketToBot, data);
+    });
+  });
+}
+
+function connectToGame() {
+  console.error("Starting StarCraft II...");
+
+  const game = spawn("/StarCraftII/Versions/Base75689/SC2_x64", ["-listen", "127.0.0.1", "-port", "5555"]);
+
+  game.stdout.on("data", function(data) {
+    console.error(data.toString().trim());
+  });
+
+  game.stderr.on("data", function(data) {
+    const text = data.toString().trim();
+
+    console.error(text);
+
+    if (text === "Startup Phase 3 complete. Ready for commands.") {
+      socketToGame = new WebSocket("ws://127.0.0.1:5555/sc2api");
+
+    
+      socketToGame.on("error", console.error);
+    
+      socketToGame.on("message", function(data) {
+        if (socketToObserver) socketToObserver.send(data);
+        if (socketToBot && (requester === socketToBot)) socketToBot.send(data);
+    
+        requester = null;
+      });
     }
   });
-});
 
-console.error("Starting StarCraft II...");
-const game = spawn("/StarCraftII/Versions/Base75689/SC2_x64", ["-listen", "127.0.0.1", "-port", "5555"]);
+  game.on("close", function(details) {
+    console.error("StarCraft II exited");
 
-game.stdout.on("data", function(data) {
-  console.error(data.toString().trim());
-});
+    if (details) console.error(details);
 
-game.stderr.on("data", function(data) {
-  const text = data.toString().trim();
+    connectToGame();
+  });
+}
 
-  console.error(text);
-
-  if (text === "Startup Phase 3 complete. Ready for commands.") {
-    const socketToGame = new WebSocket("ws://127.0.0.1:5555/sc2api");
-    let socketToBot;
-
-    new WebSocketServer({ port: PORT_API }).on("connection", function(socket) {
-      socketToBot = socket;
-    
-      socketToBot.on("error", console.error);
-    
-      socketToBot.on("message", function(data) {
-        if (observer) observer.send(data);
-        socketToGame.send(data);
-      });
-    });
-    
-    socketToGame.on("error", console.error);
-    
-    socketToGame.on("message", function(data) {
-      if (observer) observer.send(data);
-      socketToBot.send(data);
-    });
+function sendToGame(caller, data) {
+  if (socketToGame) {
+    // TODO: Queue requests if another request was already sent
+    requester = caller;
+    socketToGame.send(data);
   }
-});
+}
 
-game.on("close", function(details) {
-  console.error("StarCraft II exited");
-
-  if (details) console.error(details);
-
-  process.exit(1);
-});
+connectToGame();
+listenForObservers();
+listenForBots();

@@ -1,0 +1,48 @@
+<!-- Fragment start -->
+
+<span class="head">Create game vs</span>
+<form style="display: inline">
+  <select id="race">
+    <option value="3">Protoss</option>
+    <option value="1">Terran</option>
+    <option value="2">Zerg</option>
+    <option value="4" selected="true">Random</option>
+  </select>
+  <select id="difficulty">
+    <option value="1">Very Easy</option>
+    <option value="2">Easy</option>
+    <option value="3">Medium</option>
+    <option value="4">Hard</option>
+    <option value="5">Harder</option>
+    <option value="6">Very Hard</option>
+    <option value="7" selected="true">Elite</option>
+    <option value="8">Cheater (Vision)</option>
+    <option value="9">Cheater (Resources)</option>
+    <option value="10">Cheater (Insane)</option>
+  </select>
+  on
+  <select id="map">
+    <option value="AbyssalReefAIE.SC2Map" selected="true">Abyssal Reef AIE</option>
+    <option value="AcropolisAIE.SC2Map">Acropolis AIE</option>
+    <option value="AutomatonAIE.SC2Map">Automaton AIE</option>
+    <option value="EphemeronAIE.SC2Map">Ephemeron AIE</option>
+    <option value="InterloperAIE.SC2Map">Interloper AIE</option>
+    <option value="ThunderbirdAIE.SC2Map">Thunderbird AIE</option>
+  </select>
+
+  <button id="save" type="button">Start</button>
+</form>
+
+<script>
+  const vscode = acquireVsCodeApi();
+
+  document.getElementById("save").addEventListener("click", function(event) {
+    vscode.postMessage({
+      type: "host",
+      map: document.getElementById("map").value,
+      race: Number(document.getElementById("race").value),
+      difficulty: Number(document.getElementById("difficulty").value),
+    });
+  });
+</script>
+<!-- Fragment end -->

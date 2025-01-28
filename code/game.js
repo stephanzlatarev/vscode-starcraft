@@ -5,6 +5,7 @@ const WebSocket = require("ws");
 const files = require("./files.js");
 const Types = require("./types.js");
 
+const Request = sc2def.lookupType("Request");
 const Response = sc2def.lookupType("Response");
 
 const state = new Map();
@@ -33,8 +34,16 @@ class Game {
     await this.player.connect();
   }
 
+  async host() {
+    await this.player.host();
+  }
+
   async start() {
     await this.player.start();
+  }
+
+  async request(message) {
+    await this.player.request(message);
   }
 
   get(key) {
@@ -109,7 +118,6 @@ class Game {
   reset() {
     if (this.player) this.player.close();
 
-    Types.clear();
     state.clear();
   }
 
@@ -143,6 +151,9 @@ class Player {
 
   stepSize = 1;
   stepSkip = 0;
+
+  host() {}
+  request() {}
 
   pause() {
     this.isPaused = true;
@@ -239,10 +250,26 @@ class ReplayPlayer extends Player {
 
 class GamePlayer extends Player {
 
+  isGameCreated = false;
+  isGameJoined = false;
+  error = null;
+
   async connect() {
     for (let attempt = 0; attempt < 30; attempt++) {
       try {
-        return this.connection = await open();
+        const connection = new WebSocket("ws://127.0.0.1:5001/sc2api");
+
+        await new Promise(function(resolve, reject) {
+          connection.on("open", () => resolve(connection));
+          connection.on("error", reject);
+        });
+
+        connection.on("message", this.onGameEvent.bind(this));
+
+        this.connection = connection;
+        this.error = null;
+
+        return;
       } catch (_) {
         await sleep(100);
       }
@@ -251,50 +278,53 @@ class GamePlayer extends Player {
     throw new Error("Unable to connect");
   }
 
-  async start() {
-    let isGameCreated = false;
+  async host() {
+    while (!this.isGameCreated && !this.isClosed) {
+      if (this.error) throw new Error(this.error);
 
-    this.connection.on("message", function(data) {      
-      try {
-        const decoded = Response.decode(data);
-
-        if (decoded.status === 3) { // Status in_game        
-          const response = Response.toObject(decoded, { bytes: Array, longs: String, defaults: true });
-
-          for (const key in response) {
-            const field = Response.fields[key];
-            const value = response[key];
-
-            if (field && (field.typeDefault === null)) {
-              state.set(key, value);
-
-              if (!isGameCreated && (key === "joinGame")) {
-                isGameCreated = true;
-              } else if (key === "data") {
-                Types.read(value);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Unable to decode game event:", error.message ? error.message : error);
-      }
-    });
-
-    while (!this.isClosed && !isGameCreated) {
       await sleep(200);
     }
   }
 
-}
+  async start() {
+    while (!this.isGameJoined && !this.isClosed) {
+      await sleep(200);
+    }
+  }
 
-function open() {
-  const connection = new WebSocket("ws://127.0.0.1:5001/sc2api");
+  async request(message) {
+    this.connection.send(Request.encode(Request.create(message)).finish());
+  }
 
-  return new Promise(function(resolve, reject) {
-    connection.on("open", () => resolve(connection));
-    connection.on("error", reject);
-  });
+  onGameEvent(data) {     
+    try {
+      const decoded = Response.decode(data);
+
+      if (!this.isGameCreated && ((decoded.status === 2) || (decoded.status === 3))) this.isGameCreated = true;
+      if (!this.isGameJoined && (decoded.status === 3)) this.isGameJoined = true;
+
+      if (decoded.createGame && (decoded.createGame.error !== 1)) this.error = decoded.createGame.errorDetails;
+
+      if (decoded.status === 3) { // Status in_game        
+        const response = Response.toObject(decoded, { bytes: Array, longs: String, defaults: true });
+
+        for (const key in response) {
+          const field = Response.fields[key];
+          const value = response[key];
+
+          if (field && (field.typeDefault === null)) {
+            state.set(key, value);
+
+            if (key === "data") {
+              Types.read(value);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Unable to decode game event:", error.message ? error.message : error);
+    }
+  }
 }
 
 function sleep(millis) {

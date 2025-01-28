@@ -7,6 +7,7 @@ const game = require("./game.js");
 const minimap = require("./minimap.js");
 const timer = require("./timer.js");
 const Checklist = require("./checklist.js");
+const Host = require("./host.js");
 
 let activeContainer;
 let isGamePaused = false;
@@ -86,8 +87,9 @@ async function start(container, document) {
     [() => game.start(), "Start the replay"],
   ] : [
     ...prerequisites,
-    [() => game.play(), "Connect to StarCraft II"],
-    [() => game.start(), "Wait for the bot to connect to 127.0.0.1:5000, create the game and join it"],
+    [() => game.play(), "Open StarCraft II API endpoint at ws://127.0.0.1:5000/sc2api"],
+    [() => game.host(), new Host(container)],
+    [() => game.start(), "Wait for a bot to join the game"],
   ];
 
   const checklist = new Checklist(container);
@@ -129,6 +131,7 @@ async function start(container, document) {
 }
 
 function deactivate() {
+  activeContainer = false;
   timer.stop();
   game.stop();
 

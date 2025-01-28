@@ -1,3 +1,4 @@
+const Host = require("./host.js");
 
 const CHECKING = 0;
 const SUCCESS = 1;
@@ -30,7 +31,7 @@ class Checklist {
         render(this, SUCCESS);
         resolve(result);
       } catch (error) {
-        render(this, FAILURE);
+        render(this, FAILURE, error.message);
         reject(error);
       }
     }.bind(this));
@@ -42,7 +43,7 @@ class Checklist {
 
 }
 
-function render(checklist, status) {
+async function render(checklist, status, details) {
   const html = [
     "<!DOCTYPE html>",
     "<html>",
@@ -53,7 +54,7 @@ function render(checklist, status) {
     ".blue { color: blue; }",
     ".green { color: green; }",
     ".red { color: red; }",
-    ".text { padding-left: 1rem; }",
+    ".head { padding-left: 1rem; }",
     ".spin { animation: spin 1s linear infinite; }",
     "@keyframes spin { 100% { transform: rotate(360deg); } }",
     "</style>",
@@ -61,10 +62,15 @@ function render(checklist, status) {
   ];
 
   for (let i = 0; i < checklist.checks.length - 1; i++) {
-    html.push("<div>", FLAG[SUCCESS], "<span class='text'>", checklist.checks[i], "</span>", "</div>");
+    const check = checklist.checks[i];
+    const markup = (check instanceof Host) ? check.complete() : "<span class='head'>" + check + "</span>";
+
+    html.push("<div>", FLAG[SUCCESS], markup, "</div>");
   }
 
-  html.push("<div>", FLAG[status], "<span class='text'>", checklist.checks[checklist.checks.length - 1], "</span>", "</div>");
+  const check = checklist.checks[checklist.checks.length - 1];
+  const markup = (check instanceof Host) ? (!status ? await check.checking() : check.complete()) : "<span class='head'>" + check + "</span>";
+  html.push("<div>", FLAG[status], markup, details || "", "</div>");
 
   html.push(
     "</body>",
