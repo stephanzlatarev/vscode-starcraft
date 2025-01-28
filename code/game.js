@@ -199,7 +199,7 @@ class ReplayPlayer extends Player {
   async start() {
     await this.client.startReplay({
       replayPath: this.file,
-      observedPlayerId: 0,
+      observedPlayerId: 1,
       realtime: false,
       options: {
         raw: true,
