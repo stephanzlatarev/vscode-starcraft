@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+  <div id="unit"></div>
+</body>
+
+<script>
+
+function showUnit(unit) {
+  if (unit) {
+    const info = [];
+
+    for (const key in unit) {
+      info.push(key, ": ", JSON.stringify(unit[key]), "<br />");
+    }
+
+    document.getElementById("unit").innerHTML = info.join("");
+  } else {
+    document.getElementById("unit").innerHTML = "";
+  }
+}
+
+window.addEventListener("message", function({ data }) {
+  switch (data.type) {
+    case "unit": return showUnit(data.unit);
+  }
+});
+</script>
+
+</html>

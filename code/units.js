@@ -67,12 +67,13 @@ class Units {
 }
 
 function getUnitBasicInfo(unit) {
-  return { type: Types.get(unit.unitType), owner: unit.owner, x: unit.pos.x, y: unit.pos.y, r: unit.radius };
+  return { type: Types.get(unit.unitType), tag: unit.tag, owner: unit.owner, x: unit.pos.x, y: unit.pos.y, r: unit.radius };
 }
 
 function getUnitDetailedInfo(unit) {
   return {
     type: Types.get(unit.unitType),
+    tag: unit.tag,
     owner: unit.owner,
     x: unit.pos.x,
     y: unit.pos.y,

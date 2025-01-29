@@ -33,6 +33,12 @@
     "views": {
       "explorer": [
         {
+          "id": "starcraft.details",
+          "type": "webview",
+          "name": "Unit details",
+          "when": "starcraft.isInGame"
+        },
+        {
           "id": "starcraft.controls",
           "type": "webview",
           "name": "Game Controls",

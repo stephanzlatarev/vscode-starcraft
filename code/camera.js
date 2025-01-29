@@ -1,3 +1,4 @@
+const details = require("./details.js");
 const files = require("./files.js");
 const game = require("./game.js");
 const minimap = require("./minimap.js");
@@ -35,13 +36,20 @@ class Camera {
     timer.remove(this.tick);
   }
 
-  move(x, y) {
+  select(unit) {
+    this.move(unit.x, unit.y, unit.tag);
+  }
+
+  move(x, y, tag) {
+    this.focus = { x, y, tag };
+
     if (this.container) {
       this.container.webview.postMessage({ type: "viewbox", viewbox: { x, y, span: this.span } });
-      this.focus = { x, y};
-
-      minimap.onCameraMove(x, y, this.span);
     }
+
+    if (tag) details.onSelect(tag);
+
+    minimap.onCameraMove(x, y, this.span);
   }
 
   renew() {
@@ -54,7 +62,7 @@ class Camera {
 
       // Recover the focus
       if (this.focus) {
-        this.move(this.focus.x, this.focus.y);
+        this.move(this.focus.x, this.focus.y, this.focus.tag);
       }
     }
 
@@ -79,11 +87,7 @@ class Camera {
       const list = units.list(this.viewbox);
 
       if (!this.focus) {
-        const homebase = list.find(unit => ((unit.owner === 1) && (unit.r > 1))) || units.list().find(unit => ((unit.owner === 1) && (unit.r > 1)));
-
-        if (homebase) {
-          this.move(homebase.x, homebase.y);
-        }
+        this.select(list.find(unit => ((unit.owner === 1) && (unit.r > 1))) || units.list().find(unit => ((unit.owner === 1) && (unit.r > 1))));
       }
 
       this.container.webview.postMessage({ type: "units", units: list });

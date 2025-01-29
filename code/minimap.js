@@ -22,6 +22,8 @@ class MiniMap {
     this.container = null;
     this.gameInfo = null;
     this.observation = null;
+    
+    timer.remove(this.tick);
   }
 
   onCameraMove(x, y, span) {
