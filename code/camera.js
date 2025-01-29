@@ -2,6 +2,7 @@ const files = require("./files.js");
 const game = require("./game.js");
 const minimap = require("./minimap.js");
 const timer = require("./timer.js");
+const units = require("./units.js");
 
 class Camera {
 
@@ -75,17 +76,17 @@ class Camera {
     }
 
     if (observation && ((observation !== this.observation) || (this.renderedViewBox !== this.viewbox))) {
-      const units = game.units(this.viewbox);
+      const list = units.list(this.viewbox);
 
       if (!this.focus) {
-        const homebase = units.find(unit => ((unit.owner === 1) && (unit.r > 1))) || game.units().find(unit => ((unit.owner === 1) && (unit.r > 1)));
+        const homebase = list.find(unit => ((unit.owner === 1) && (unit.r > 1))) || units.list().find(unit => ((unit.owner === 1) && (unit.r > 1)));
 
         if (homebase) {
           this.move(homebase.x, homebase.y);
         }
       }
 
-      this.container.webview.postMessage({ type: "units", units: units });
+      this.container.webview.postMessage({ type: "units", units: list });
 
       this.observation = observation;
       this.renderedViewBox = this.viewbox;

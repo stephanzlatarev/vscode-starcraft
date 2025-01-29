@@ -1,6 +1,7 @@
 const files = require("./files.js");
 const game = require("./game.js");
 const timer = require("./timer.js");
+const units = require("./units.js");
 
 class MiniMap {
 
@@ -60,7 +61,7 @@ class MiniMap {
     }
 
     if (observation && (observation !== this.observation)) {
-      this.container.webview.postMessage({ type: "units", units: game.units() });
+      this.container.webview.postMessage({ type: "units", units: units.list() });
 
       this.observation = observation;
       isChanged = true;
