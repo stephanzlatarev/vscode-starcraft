@@ -28,11 +28,7 @@ class Game {
   }
 
   async connect() {
-    try {
-      await this.game.connect();
-    } catch (error) {
-      this.error = error;
-    }
+    await this.game.connect();
   }
 
   get(key) {
@@ -40,6 +36,8 @@ class Game {
   }
 
   onEvent(key, value, status) {
+    if (value.error > 1) return this.error = value.errorDetails;
+
     if (!this.isCreated && ((status === 2) || (status === 3))) this.isCreated = true;
     if (!this.isJoined && (status === 3)) this.isJoined = true;
 
@@ -47,19 +45,8 @@ class Game {
       this.state.set(key, value);
     }
 
-    switch(key) {
-      case "createGame": {
-        if (value.error !== 1) {
-          this.error = value.errorDetails;
-        }
-        break;
-      }
-      case "data": {
-        if ((status === 3) || (status === 4)) {
-          Types.read(value);
-        }
-        break;
-      }
+    if ((key === "data") && ((status === 3) || (status === 4))) {
+      Types.read(value);
     }
   }
 
@@ -84,6 +71,9 @@ class Game {
           },
         }
       });
+
+      if (this.error) throw new Error(this.error);
+
       await this.game.request({ data: { unitTypeId: true } });
       await this.game.request({ gameInfo: {} });
 
@@ -130,6 +120,7 @@ class Game {
     this.stepSkip = 0;
 
     this.state.clear();
+    this.error = null;
   }
 
   stop() {

@@ -21,7 +21,7 @@ function listenForObservers() {
     socket.on("error", console.error);
 
     socket.on("message", function(data) {
-      sendToGame(socketToObserver, data);
+      if (socket) sendToGame(socket, data);
     });
 
     socket.on("close", function() {
@@ -38,14 +38,23 @@ function listenForBots() {
   console.error("Listening for bots...");
 
   new WebSocketServer({ port: PORT_API }).on("connection", function(socket) {
+    console.error("Bot connected");
+
     socketToBot = socket;
 
-    socketToBot.on("error", console.error);
+    socket.on("error", console.error);
 
-    socketToBot.on("message", function(data) {
+    socket.on("message", function(data) {
       if (socketToObserver) socketToObserver.send(data);
+      if (socket) sendToGame(socket, data);
+    });
 
-      sendToGame(socketToBot, data);
+    socket.on("close", function() {
+      if (socket === socketToBot) {
+        console.error("Bot disconnected");
+
+        socketToBot = null;
+      }
     });
   });
 }
@@ -65,12 +74,17 @@ function connectToGame() {
     console.error(text);
 
     if (text === "Startup Phase 3 complete. Ready for commands.") {
-      socketToGame = new WebSocket("ws://127.0.0.1:5555/sc2api");
+      const socket = new WebSocket("ws://127.0.0.1:5555/sc2api");
 
+      socket.on("open", function open() {
+        console.error("StarCraft II connected");
+
+        socketToGame = socket;
+      });
+
+      socket.on("error", console.error);
     
-      socketToGame.on("error", console.error);
-    
-      socketToGame.on("message", function(data) {
+      socket.on("message", function(data) {
         if (socketToObserver) socketToObserver.send(data);
         if (socketToBot && (request.caller === socketToBot)) socketToBot.send(data);
     
