@@ -27,6 +27,7 @@ class Details {
 
   onSelect(tag) {
     this.selectedUnitTag = tag;
+    this.observation = null;    // Clear cached data so that view gets refreshed
   }
 
   renew() {
@@ -39,16 +40,21 @@ class Details {
   
   refresh() {
     if (!this.container || !this.container.visible) return;
-    if (!this.selectedUnitTag) return;
 
     const observation = game.get("observation");
 
     if (observation && (observation !== this.observation)) {
-      const unit = observation.observation.rawData.units.find(unit => (unit.tag === this.selectedUnitTag));
-      const type = unit ? Types.get(unit.unitType).name : "";
+      const unit = this.selectedUnitTag ? observation.observation.rawData.units.find(unit => (unit.tag === this.selectedUnitTag)) : null;
 
-      this.container.title = unit ? type + " " + unit.tag : "Unit details";
-      this.container.webview.postMessage({ type: "unit", unit });
+      if (unit) {
+        const type = Types.get(unit.unitType).name;
+
+        this.container.title = type + " " + unit.tag;
+        this.container.webview.postMessage({ type: "unit", unit });
+      } else {
+        this.container.title = "Unit details";
+        this.container.webview.postMessage({ type: "unit", unit: null });
+      }
 
       this.observation = observation;
 

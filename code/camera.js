@@ -8,8 +8,9 @@ const units = require("./units.js");
 class Camera {
 
   span = 25;
-  tick = this.refresh.bind(this);
   renderedViewBox = null;
+
+  tick = this.refresh.bind(this);
 
   async attach(container) {
     this.container = container;
@@ -23,6 +24,7 @@ class Camera {
 
     container.webview.onDidReceiveMessage(function(message) {
       if (message.type === "viewbox") this.viewbox = message.viewbox;
+      if (message.event === "click") this.select(findUnit(this.viewbox, message.x, message.y));
     }.bind(this));
 
     this.renew();
@@ -37,7 +39,11 @@ class Camera {
   }
 
   select(unit) {
-    this.move(unit.x, unit.y, unit.tag);
+    if (unit) {
+      this.move(unit.x, unit.y, unit.tag);
+    } else {
+      details.onSelect(null);
+    }
   }
 
   move(x, y, tag) {
@@ -47,8 +53,7 @@ class Camera {
       this.container.webview.postMessage({ type: "viewbox", viewbox: { x, y, span: this.span } });
     }
 
-    if (tag) details.onSelect(tag);
-
+    details.onSelect(tag);
     minimap.onCameraMove(x, y, this.span);
   }
 
@@ -97,6 +102,19 @@ class Camera {
     }
   }
 
+}
+
+function findUnit(viewbox, x, y) {
+  const list = units.list(viewbox);
+
+  for (const unit of list) {
+    const squareDistance = (unit.x - x) * (unit.x - x) + (unit.y - y) * (unit.y - y);
+    const squareRadius = unit.r * unit.r;
+
+    if (squareDistance <= squareRadius) {
+      return unit;
+    }
+  }
 }
 
 module.exports = new Camera();
