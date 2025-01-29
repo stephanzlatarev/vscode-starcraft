@@ -93,6 +93,12 @@ class Camera {
 
       if (!this.focus) {
         this.select(list.find(unit => ((unit.owner === 1) && (unit.r > 1))) || units.list().find(unit => ((unit.owner === 1) && (unit.r > 1))));
+      } else if (this.focus.tag) {
+        const unit = list.find(unit => (unit.tag === this.focus.tag));
+
+        if (unit && ((unit.x !== this.focus.x) || (unit.y !== this.focus.y))) {
+          this.move(unit.x, unit.y, unit.tag);
+        }
       }
 
       this.container.webview.postMessage({ type: "units", units: list });
