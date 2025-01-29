@@ -77,14 +77,14 @@ async function start(container, document) {
     [() => docker.checkServer(), "Check Docker Server"],
     [() => docker.checkImage(), "Download StarCraft II"],
     [() => game.init(), "Start StarCraft II"],
+    [() => game.connect(), "Connect to StarCraft II"],
   ];
 
   const checks = document ?
   [
     ...prerequisites,
     [() => files.copyReplayFile(document.uri), "Get replay file"],
-    [() => game.replay(files.getFileName(document.uri)), "Connect to StarCraft II"],
-    [() => game.start(), "Start the replay"],
+    [() => game.play(files.getFileName(document.uri)), "Start the replay"],
   ] : [
     ...prerequisites,
     [() => game.play(), "Open StarCraft II API endpoint at ws://127.0.0.1:5000/sc2api"],

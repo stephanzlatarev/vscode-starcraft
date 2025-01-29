@@ -1,6 +1,6 @@
-# StarCraft II for Bots
+# StarCraft II for AI
 
-Run your bots with StarCraft II within Visual Studio Code.
+Run your AI bots with StarCraft II within Visual Studio Code.
 
 ## Features
 
@@ -40,6 +40,8 @@ The following ports must be available on the host machine:
 ## Acknowledgements
 
 This extension to Visual Studio Code makes use of [StarCraft II API](https://github.com/Blizzard/s2client-proto) and its headless StarCraft II linux build,
-the lightweight node.js framework [node-sc2](https://github.com/node-sc2),
 and the AI edition maps by [AI Arena](https://aiarena.net/).
 Thanks for your great work!
+
+Make sure to read the license of the above work and to agree with it before using this extension:
+* [BLIZZARD® STARCRAFT® II AI AND MACHINE LEARNING LICENSE](https://blzdistsc2-a.akamaihd.net/AI_AND_MACHINE_LEARNING_LICENSE.html)
