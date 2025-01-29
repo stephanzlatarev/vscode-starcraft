@@ -39,6 +39,12 @@
           "when": "starcraft.isInGame"
         },
         {
+          "id": "starcraft.actions",
+          "type": "webview",
+          "name": "Step actions",
+          "when": "starcraft.isInGame"
+        },
+        {
           "id": "starcraft.controls",
           "type": "webview",
           "name": "Game Controls",

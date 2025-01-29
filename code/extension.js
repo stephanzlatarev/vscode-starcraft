@@ -1,4 +1,5 @@
 const vscode = require("vscode");
+const actions = require("./actions.js");
 const camera = require("./camera.js");
 const controls = require("./controls.js");
 const details = require("./details.js");
@@ -39,6 +40,12 @@ function activate(context) {
   context.subscriptions.push(vscode.window.registerWebviewViewProvider("starcraft.details", {
     resolveWebviewView(view) {
       details.attach(view);
+    }
+  }));
+
+  context.subscriptions.push(vscode.window.registerWebviewViewProvider("starcraft.actions", {
+    resolveWebviewView(view) {
+      actions.attach(view);
     }
   }));
 

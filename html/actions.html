@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+  <div id="actions"></div>
+</body>
+
+<script>
+
+function showActions(actions) {
+  const list = [];
+
+  for (const action of actions) {
+    list.push(action.loop, JSON.stringify(action.command), "<br />");
+  }
+
+  document.getElementById("actions").innerHTML = list.join(" ");
+}
+
+window.addEventListener("message", function({ data }) {
+  switch (data.type) {
+    case "actions": return showActions(data.actions);
+  }
+});
+</script>
+
+</html>
