@@ -8,7 +8,7 @@ let socketToGame;
 let socketToBot;
 let socketToObserver;
 
-let requester;
+let request;
 
 function listenForObservers() {
   console.error("Listening for observer...");
@@ -72,9 +72,9 @@ function connectToGame() {
     
       socketToGame.on("message", function(data) {
         if (socketToObserver) socketToObserver.send(data);
-        if (socketToBot && (requester === socketToBot)) socketToBot.send(data);
+        if (socketToBot && (request.caller === socketToBot)) socketToBot.send(data);
     
-        requester = null;
+        request = null;
       });
     }
   });
@@ -88,14 +88,19 @@ function connectToGame() {
   });
 }
 
-function sendToGame(caller, data) {
-  if (socketToGame) {
-    // TODO: Queue requests if another request was already sent
-    requester = caller;
-    socketToGame.send(data);
-  }
+async function sendToGame(caller, data) {
+  while (!socketToGame) await sleep(10);
+  while (request) await sleep(10);
+
+  request = { caller, data };
+
+  socketToGame.send(data);
 }
 
-connectToGame();
+function sleep(millis) {
+  return new Promise(resolve => setTimeout(resolve, millis));
+}
+
 listenForObservers();
 listenForBots();
+connectToGame();
