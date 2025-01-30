@@ -30,9 +30,11 @@
     </span>
   </div>
   <div id="controls">
+    <div id="back" class="button" style="display: none">&#x23EE; 1 frame</div>
     <div id="pause" class="button" style="display: none">&#x23F8; pause</div>
     <div id="resume" class="button" style="display: none">&#x23F5; resume</div>
-    <div id="skip" class="button" style="display: none">&#x23ED; skip 1min</div>
+    <div id="forth" class="button" style="display: none">&#x23ED; 1 frame</div>
+    <div id="skip" class="button" style="display: none">&#x23ED; 1 min</div>
   </div>
 </body>
 
@@ -44,12 +46,25 @@ const vscode = acquireVsCodeApi();
 let isStarted;
 
 const commands = {
+  back: () => {
+    document.getElementById("forth").style.display = "block";
+    document.getElementById("pause").style.display = "none";
+    document.getElementById("skip").style.display = "none";
+    document.getElementById("resume").style.display = "block";
+  },
+  forth: () => {
+    document.getElementById("pause").style.display = "none";
+    document.getElementById("skip").style.display = "none";
+    document.getElementById("resume").style.display = "block";
+  },
   pause: () => {
     document.getElementById("pause").style.display = "none";
     document.getElementById("skip").style.display = "none";
     document.getElementById("resume").style.display = "block";
   },
   resume: () => {
+    document.getElementById("back").style.display = "block";
+    document.getElementById("forth").style.display = "none";
     document.getElementById("resume").style.display = "none";
     document.getElementById("pause").style.display = "block";
     document.getElementById("skip").style.display = "block";

@@ -15,6 +15,8 @@ class Controls {
     container.onDidDispose(this.detach.bind(this));
 
     container.webview.onDidReceiveMessage(function(message) {
+      if (message.event === "back") this.back();
+      if (message.event === "forth") this.forth();
       if (message.event === "pause") this.pause();
       if (message.event === "resume") this.resume();
       if (message.event === "skip") this.skip();
@@ -57,6 +59,20 @@ class Controls {
 
   showControls(flag) {
     this.isShowingControls = !!flag;
+  }
+
+  back() {
+    if (!this.isPaused) this.pause();
+
+    post(this, { type: "back" });
+    game.history(-1);
+  }
+
+  forth() {
+    if (!this.isPaused) this.pause();
+
+    post(this, { type: "forth" });
+    game.history(+1);
   }
 
   pause(toggle) {

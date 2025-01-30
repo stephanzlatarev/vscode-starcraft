@@ -1,6 +1,7 @@
 const { execSync, spawnSync } = require("node:child_process");
 const Connection = require("./connection.js");
 const files = require("./files.js");
+const history = require("./history.js");
 const Types = require("./types.js");
 
 class Game {
@@ -45,8 +46,16 @@ class Game {
       this.state.set(key, value);
     }
 
-    if ((key === "data") && ((status === 3) || (status === 4))) {
-      Types.read(value);
+    if ((status === 3) || (status === 4)) {
+      if (key === "data") {
+        Types.read(value);
+      } else if (key === "step") {
+        history.add(loop(this), this.state);
+
+        const gameInfo = this.state.get("gameInfo");
+        this.state = new Map();
+        this.state.set("gameInfo", gameInfo);
+      }
     }
   }
 
@@ -99,6 +108,10 @@ class Game {
     await this.game.request(message);
   }
 
+  history(step) {
+    this.state = history.get(loop(this) + step) || this.state;
+  }
+
   pause() {
     this.isPaused = true;
   }
@@ -119,8 +132,10 @@ class Game {
     this.stepSize = 1;
     this.stepSkip = 0;
 
-    this.state.clear();
+    this.state = new Map();
     this.error = null;
+
+    history.clear();
   }
 
   stop() {
@@ -157,6 +172,14 @@ async function stepReplay(game, duration) {
 
     // Only remove the current skip if there was stepSkip before the asynchronous step
     if (skip) game.stepSkip = 0;
+  }
+}
+
+function loop(game) {
+  const observation = game.get("observation");
+
+  if (observation) {
+    return observation.observation.gameLoop;
   }
 }
 
