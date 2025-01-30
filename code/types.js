@@ -6,27 +6,42 @@ class Types {
   static KIND_MINERAL_FIELD = 2;
   static KIND_VESPENE_GEYSER = 3;
 
-  types = new Map();
+  abilities = new Map();
+  units = new Map();
 
-  get(id) {
-    return this.types.get(id);
+  ability(id) {
+    return this.abilities.get(id) || "";
+  }
+
+  unit(id) {
+    return this.units.get(id) || { kind: "Unknown", name: id, alias: null };
   }
 
   read(data) {
-    if (!data || !data.units) return;
+    if (!data) return;
 
-    for (const unit of data.units) {
-      if (unit.unitId && unit.name) {
-        const kind = getKind(unit);
-        const alias = (unit.race && ((kind === Types.KIND_UNIT) || (kind === Types.KIND_BUILDING))) ? ALIASES[unit.name] : null;
+    if (data.abilities) {
+      for (const ability of data.abilities) {
+        if (ability.available && ability.linkName) {
+          this.abilities.set(ability.abilityId, ability.linkName);
+        }
+      }
+    }
 
-        const type = {
-          kind: kind,
-          name: unit.name,
-          alias: alias,
-        };
+    if (data.units) {
+      for (const unit of data.units) {
+        if (unit.unitId && unit.name) {
+          const kind = getKind(unit);
+          const alias = (unit.race && ((kind === Types.KIND_UNIT) || (kind === Types.KIND_BUILDING))) ? ALIASES[unit.name] : null;
 
-        this.types.set(unit.unitId, type);
+          const type = {
+            kind: kind,
+            name: unit.name,
+            alias: alias,
+          };
+
+          this.units.set(unit.unitId, type);
+        }
       }
     }
   }

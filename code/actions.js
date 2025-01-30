@@ -1,6 +1,8 @@
 const files = require("./files.js");
 const game = require("./game.js");
 const timer = require("./timer.js");
+const Types = require("./types.js");
+const units = require("./units.js");
 
 class Actions {
 
@@ -38,7 +40,7 @@ class Actions {
 
     if (observation && (observation !== this.observation)) {
       const actions = observation.actions.filter(action => !!(action.actionRaw && action.actionRaw.unitCommand))
-        .map(action => ({ loop: action.gameLoop, command: action.actionRaw.unitCommand }));
+        .map(action => ({ loop: action.gameLoop, text: text(action.actionRaw.unitCommand) }));
 
       this.container.webview.postMessage({ type: "actions", actions });
 
@@ -49,6 +51,27 @@ class Actions {
     }
   }
 
+}
+
+function text(command) {
+  const unit = units.get(command.unitTags[0]);
+  let target = "";
+
+  if (command.targetWorldSpacePos) {
+    target = Math.floor(command.targetWorldSpacePos.x) + ":" + Math.floor(command.targetWorldSpacePos.y);
+  } else if (command.targetUnitTag) {
+    const targetUnit = units.get(command.targetUnitTag);
+
+    target = Types.unit(targetUnit.unitType).name + " " + targetUnit.tag;
+  }
+
+  return [
+    Types.unit(unit.unitType).name,
+    unit.tag,
+    Types.ability(command.abilityId),
+    "(" + command.abilityId + ")",
+    target,
+  ].join(" ");
 }
 
 module.exports = new Actions();

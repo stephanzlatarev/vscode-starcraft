@@ -83,7 +83,7 @@ class Game {
 
       if (this.error) throw new Error(this.error);
 
-      await this.game.request({ data: { unitTypeId: true } });
+      await this.game.request({ data: { abilityId: true, unitTypeId: true } });
       await this.game.request({ gameInfo: {} });
 
       stepReplay(this, replayInfo.gameDurationLoops);

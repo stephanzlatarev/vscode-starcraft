@@ -47,7 +47,7 @@ class Details {
       const unit = this.selectedUnitTag ? observation.observation.rawData.units.find(unit => (unit.tag === this.selectedUnitTag)) : null;
 
       if (unit) {
-        const type = Types.get(unit.unitType).name;
+        const type = Types.unit(unit.unitType).name;
 
         this.container.title = type + " " + unit.tag;
         this.container.webview.postMessage({ type: "unit", unit });

@@ -11,7 +11,7 @@ function showActions(actions) {
   const list = [];
 
   for (const action of actions) {
-    list.push(action.loop, JSON.stringify(action.command), "<br />");
+    list.push(action.loop, action.text, "<br />");
   }
 
   document.getElementById("actions").innerHTML = list.join(" ");
