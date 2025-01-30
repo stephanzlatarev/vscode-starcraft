@@ -12,7 +12,6 @@ const Checklist = require("./checklist.js");
 const Host = require("./host.js");
 
 let activeContainer;
-let isGamePaused = false;
 
 function activate(context) {
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);
@@ -52,12 +51,6 @@ function activate(context) {
   context.subscriptions.push(vscode.window.registerWebviewViewProvider("starcraft.controls", {
     resolveWebviewView(view) {
       controls.attach(view);
-
-      view.webview.onDidReceiveMessage(function(message) {
-        if (message.event === "pause") game.pause();
-        if (message.event === "resume") game.resume();
-        if (message.event === "skip") game.skip();
-      });
     }
   }));
 
@@ -131,15 +124,7 @@ async function start(container, document) {
 
       minimap.onCameraMove(x, y, camera.span);
     } else if (message.event === "pause") {
-      if (isGamePaused) {
-        isGamePaused = false;
-        game.resume();
-        controls.resume();
-      } else {
-        isGamePaused = true;
-        game.pause();
-        controls.pause();
-      }
+      controls.pause(true);
     }
   });
 }

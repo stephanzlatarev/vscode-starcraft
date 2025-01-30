@@ -14,6 +14,12 @@ class Controls {
     container.onDidChangeVisibility(this.renew.bind(this));
     container.onDidDispose(this.detach.bind(this));
 
+    container.webview.onDidReceiveMessage(function(message) {
+      if (message.event === "pause") this.pause();
+      if (message.event === "resume") this.resume();
+      if (message.event === "skip") this.skip();
+    }.bind(this));
+
     this.renew();
   }
 
@@ -46,21 +52,40 @@ class Controls {
       this.observation = observation;
     }
 
-    this.container.webview.postMessage({ type: "controls", enabled: this.isShowingControls });
+    post(this, { type: "controls", enabled: this.isShowingControls });
   }
 
   showControls(flag) {
     this.isShowingControls = !!flag;
   }
 
-  pause() {
-    if (this.container) this.container.webview.postMessage({ type: "pause" });
+  pause(toggle) {
+    if (toggle && this.isPaused) {
+      this.resume();
+    } else {
+      this.isPaused = true;
+      post(this, { type: "pause" });
+      game.pause();
+    }
   }
 
   resume() {
-    if (this.container) this.container.webview.postMessage({ type: "resume" });
+    this.isPaused = false;
+    post(this, { type: "resume" });
+    game.resume();
   }
 
+  skip() {
+    post(this, { type: "skip" });
+    game.skip();
+  }
+
+}
+
+function post(controls, message) {
+  if (controls.container) {
+    controls.container.webview.postMessage(message);
+  }
 }
 
 module.exports = new Controls();

@@ -43,6 +43,20 @@ const LOOPS_PER_MINUTE = LOOPS_PER_SECOND * 60;
 const vscode = acquireVsCodeApi();
 let isStarted;
 
+const commands = {
+  pause: () => {
+    document.getElementById("pause").style.display = "none";
+    document.getElementById("skip").style.display = "none";
+    document.getElementById("resume").style.display = "block";
+  },
+  resume: () => {
+    document.getElementById("resume").style.display = "none";
+    document.getElementById("pause").style.display = "block";
+    document.getElementById("skip").style.display = "block";
+  },
+  skip: () => {},
+};
+
 function showControls(flag) {
   document.getElementById("controls").style.display = flag ? "block" : "none";
 }
@@ -54,10 +68,9 @@ function setObservation(loop, player) {
     const mm = (minutes >= 10) ? minutes : "0" + minutes;
     const ss = (seconds >= 10) ? seconds : "0" + seconds;
 
-    if (!isStarted) {;
+    if (!isStarted) {
       document.getElementById("player").style.display = "inline";
-      document.getElementById("pause").style.display = "block";
-      document.getElementById("skip").style.display = "block";
+      commands.resume();
     }
 
     document.getElementById("clock").innerHTML = `${mm}:${ss} (${loop})`;
@@ -71,40 +84,20 @@ function setObservation(loop, player) {
   }
 }
 
-function setPaused() {
-  document.getElementById("pause").style.display = "none";
-  document.getElementById("skip").style.display = "none";
-  document.getElementById("resume").style.display = "block";
-}
-
-function setResumed() {
-  document.getElementById("resume").style.display = "none";
-  document.getElementById("pause").style.display = "block";
-  document.getElementById("skip").style.display = "block";
-}
-
 window.addEventListener("message", function({ data }) {
   switch (data.type) {
     case "controls": return showControls(data.enabled);
     case "observation": return setObservation(data.loop, data.player);
-    case "pause": return setPaused();
-    case "resume": return setResumed();
+    default: if (commands[data.type]) commands[data.type]();
   }
 });
 
-document.getElementById("pause").addEventListener("click", function(event) {
-  vscode.postMessage({ event: "pause" });
-  setPaused();
-});
+for (const command in commands) {
+  document.getElementById(command).addEventListener("click", () => {
+    vscode.postMessage({ event: command });
+  });
+}
 
-document.getElementById("resume").addEventListener("click", function(event) {
-  vscode.postMessage({ event: "resume" });
-  setResumed();
-});
-
-document.getElementById("skip").addEventListener("click", function(event) {
-  vscode.postMessage({ event: "skip" });
-});
 </script>
 
 </html>
