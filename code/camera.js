@@ -121,14 +121,24 @@ class Camera {
 function findUnit(viewbox, x, y) {
   const list = units.list(viewbox);
 
-  for (const unit of list) {
-    const squareDistance = (unit.x - x) * (unit.x - x) + (unit.y - y) * (unit.y - y);
-    const squareRadius = unit.r * unit.r;
+  let bestUnit;
+  let bestSquareDistance;
 
-    if (squareDistance <= squareRadius) {
-      return unit;
+  for (const unit of list) {
+    if ((unit.owner !== 1) && bestUnit && (bestUnit.owner === 1)) continue;
+
+    const squareDistance = (unit.x - x) * (unit.x - x) + (unit.y - y) * (unit.y - y);
+    const squareRadius = (unit.r + 1) * (unit.r * 1);
+
+    if (squareDistance > squareRadius) continue;
+
+    if (!bestUnit || (squareDistance < bestSquareDistance)) {
+      bestUnit = unit;
+      bestSquareDistance = squareDistance;
     }
   }
+
+  return bestUnit;
 }
 
 module.exports = new Camera();

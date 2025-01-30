@@ -53,8 +53,14 @@ class Game {
         history.add(loop(this), this.state);
 
         const gameInfo = this.state.get("gameInfo");
+        const observation = this.state.get("observation");
         this.state = new Map();
         this.state.set("gameInfo", gameInfo);
+
+        // TODO: View refresh and click handling requires an observation
+        // Implement a sync fynction in timer.js that runs only between game steps when the observation is available
+        // Then remove this line
+        this.state.set("observation", observation);
       }
     }
   }
