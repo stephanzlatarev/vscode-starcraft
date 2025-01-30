@@ -10,6 +10,7 @@ const minimap = require("./minimap.js");
 const timer = require("./timer.js");
 const Checklist = require("./checklist.js");
 const Host = require("./host.js");
+const units = require("./units.js");
 
 let activeContainer;
 
@@ -45,6 +46,10 @@ function activate(context) {
   context.subscriptions.push(vscode.window.registerWebviewViewProvider("starcraft.actions", {
     resolveWebviewView(view) {
       actions.attach(view);
+
+      view.webview.onDidReceiveMessage(function(message) {
+        if (message.event === "click") camera.select(units.get(message.unit));
+      });
     }
   }));
 

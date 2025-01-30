@@ -40,7 +40,11 @@ class Actions {
 
     if (observation && (observation !== this.observation)) {
       const actions = observation.actions.filter(action => !!(action.actionRaw && action.actionRaw.unitCommand))
-        .map(action => ({ loop: action.gameLoop, text: text(action.actionRaw.unitCommand) }));
+        .map(action => ({
+          loop: action.gameLoop,
+          unit: action.actionRaw.unitCommand.unitTags[0],
+          text: text(action.actionRaw.unitCommand),
+        }));
 
       this.container.webview.postMessage({ type: "actions", actions });
 

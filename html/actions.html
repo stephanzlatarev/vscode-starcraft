@@ -1,20 +1,31 @@
 <!DOCTYPE html>
 <html>
 
+<style>
+span {
+  display: block;
+  cursor: pointer;
+}
+span:hover {
+  font-weight: bold;
+}
+</style>
+
 <body>
   <div id="actions"></div>
 </body>
 
 <script>
+const vscode = acquireVsCodeApi();
 
 function showActions(actions) {
   const list = [];
 
   for (const action of actions) {
-    list.push(action.loop, action.text, "<br />");
+    list.push("<span id='", action.unit, "'>", action.text, "</span>");
   }
 
-  document.getElementById("actions").innerHTML = list.join(" ");
+  document.getElementById("actions").innerHTML = list.join("");
 }
 
 window.addEventListener("message", function({ data }) {
@@ -22,6 +33,11 @@ window.addEventListener("message", function({ data }) {
     case "actions": return showActions(data.actions);
   }
 });
-</script>
+
+window.addEventListener("click", function(event) {
+  vscode.postMessage({ event: "click", unit: event.target.getAttribute("id") });
+});
+
+  </script>
 
 </html>

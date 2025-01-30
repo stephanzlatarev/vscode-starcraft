@@ -40,13 +40,19 @@ class Camera {
 
   select(unit) {
     if (unit) {
-      this.move(unit.x, unit.y, unit.tag);
+      if (unit.pos) {
+        this.move(unit.pos.x, unit.pos.y, unit.tag);
+      } else {
+        this.move(unit.x, unit.y, unit.tag);
+      }
     } else {
       details.onSelect(null);
     }
   }
 
   move(x, y, tag) {
+    if (!x || !y) return;
+
     this.focus = { x, y, tag };
 
     if (this.container) {
