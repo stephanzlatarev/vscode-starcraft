@@ -58,7 +58,10 @@ class Actions {
 }
 
 function text(command) {
-  const unit = units.get(command.unitTags[0]);
+  const unitTag = command.unitTags[0];
+  const unit = units.get(unitTag);
+  const unitName = unit ? Types.unit(unit.unitType).name + " " + unitTag : unitTag;
+
   let target = "";
 
   if (command.targetWorldSpacePos) {
@@ -66,12 +69,15 @@ function text(command) {
   } else if (command.targetUnitTag) {
     const targetUnit = units.get(command.targetUnitTag);
 
-    target = Types.unit(targetUnit.unitType).name + " " + targetUnit.tag;
+    if (targetUnit) {
+      target = Types.unit(targetUnit.unitType).name + " " + targetUnit.tag;
+    } else {
+      target = command.targetUnitTag;
+    }
   }
 
   return [
-    Types.unit(unit.unitType).name,
-    unit.tag,
+    unitName,
     Types.ability(command.abilityId),
     "(" + command.abilityId + ")",
     target,
