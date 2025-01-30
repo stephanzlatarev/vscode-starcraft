@@ -40,6 +40,8 @@ html, body {
 <svg id="map" width="100" height="100" viewBox="0 0 0 0" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
   <rect x="0" y="0" width="1000" height="1000" fill="black" />
   <g id="grid" style="stroke: none"></g>
+  <g id="zonelines" style="stroke: darkgoldenrod; stroke-width: 0.4; fill: none;"></g>
+  <g id="zonetexts" style="fill: darkgoldenrod; font-size: 8"></g>
   <g id="units"></g>
   <g id="focus" style="stroke: gold; stroke-width: 0.4; fill: none"></g>
 </svg>
@@ -50,6 +52,7 @@ html, body {
 const ZOOM_ICONS_THRESHOLD = 100;
 const ZOOM_RATIO = 35 / 1000;
 const OWNER_COLOR = ["white", "blue", "red"];
+const ZONE_COLS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
 const map = document.getElementById("map");
 const layerFocus = document.getElementById("focus");
@@ -120,6 +123,27 @@ function setViewBox(box) {
     }
 
     layerGrid.innerHTML = svg.join("");
+  }
+
+  if (viewbox.width >= ZOOM_ICONS_THRESHOLD) {
+    const lines = [];
+    const texts = [];
+    const stepx = viewbox.width / 10;
+    const maxx = viewbox.left + viewbox.width;
+    const stepy = viewbox.height / 10;
+    const maxy = viewbox.top + viewbox.height;
+
+    for (let x = viewbox.left, i = 0; x < maxx; x += stepx, i++) {
+      lines.push(`<line x1="${x + stepx}" y1="0" x2="${x + stepx}" y2="${maxy}" />`);
+      texts.push(`<text x="${x + stepx * 0.5}" y="${viewbox.top + stepy * 0.5}">${ZONE_COLS[i]}</text>`);
+    }
+    for (let y = viewbox.top, i = 0; y < maxy; y += stepy, i++) {
+      lines.push(`<line x1="0" y1="${y + stepy}" x2="${maxx}" y2="${y + stepy}" />`);
+      texts.push(`<text x="${viewbox.left + stepx * 0.1}" y="${y + stepy * 0.8}">${i}</text>`);
+    }
+
+    document.getElementById("zonelines").innerHTML = lines.join("");
+    document.getElementById("zonetexts").innerHTML = texts.join("");
   }
 
   map.setAttribute("viewBox", [viewbox.left, viewbox.top, viewbox.width, viewbox.height].join(" "));
