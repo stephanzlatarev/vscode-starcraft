@@ -48,6 +48,8 @@ class Camera {
     } else {
       details.onSelect(null);
     }
+
+    this.container.webview.postMessage({ type: "select", unit: (unit ? unit.tag : null) });
   }
 
   move(x, y, tag) {

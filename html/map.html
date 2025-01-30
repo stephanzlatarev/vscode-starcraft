@@ -22,6 +22,11 @@ html, body {
 .unit {
   clip-path: inset(0 0 0 0 round 50%);
 }
+.select {
+  fill: orange;
+  stroke: orange;
+  stroke-width: 0.2;
+}
 .wip {
   filter: grayscale(40%);
   opacity: 0.7;
@@ -60,6 +65,7 @@ let grid = null;
 let lastKeyCode = null;
 let lastKeyDown = false;
 let lastKeyHold = false;
+let selection = null;
 
 function setIconsPath(path) {
   iconspath = path;
@@ -68,6 +74,7 @@ function setIconsPath(path) {
 function resetCamera() {
   viewbox = { left: 0, top: 0, width: 0, height: 0 };
   grid = null;
+  selection = null;
 
   map.setAttribute("viewBox", "0 0 0 0");
   layerFocus.replaceChildren();
@@ -192,8 +199,9 @@ function setUnits(units) {
 
         const wip = unit.wip ? "wip" : "";
         const cloak = unit.cloak ? "cloak" : "";
+        const select = (unit.tag === selection) ? "select" : "";
 
-        svg.push(`<rect class="${c} ${wip} ${cloak}" x="${x}" y="${y}" width="${width}" height="${height}" fill="${color}" />`);
+        svg.push(`<rect class="${c} ${select} ${wip} ${cloak}" x="${x}" y="${y}" width="${width}" height="${height}" fill="${color}" />`);
 
         if (iconspath && unit.type.alias) {
           const href = iconspath + unit.type.alias + ".webp";
@@ -247,6 +255,7 @@ window.addEventListener("message", function({ data }) {
     case "icons": return setIconsPath(data.path);
     case "grid": return setGrid(data.size, data.placement, data.pathing);
     case "reset": return resetCamera();
+    case "select": return (selection = data.unit);
     case "units": return setUnits(data.units);
     case "viewbox": return setViewBox(data.viewbox);
   }
