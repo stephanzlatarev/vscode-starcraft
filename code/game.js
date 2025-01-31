@@ -44,9 +44,7 @@ class Game {
 
     if ((status === 3) || (status === 4)) {
       this.state.set(key, value);
-    }
 
-    if ((status === 3) || (status === 4)) {
       if (key === "data") {
         Types.read(value);
       } else if (key === "step") {
@@ -54,6 +52,8 @@ class Game {
 
         const gameInfo = this.state.get("gameInfo");
         const observation = this.state.get("observation");
+        const debugspheres = this.state.get("debugspheres");
+        const debugtext = this.state.get("debugtext");
         this.state = new Map();
         this.state.set("gameInfo", gameInfo);
 
@@ -61,6 +61,28 @@ class Game {
         // Implement a sync fynction in timer.js that runs only between game steps when the observation is available
         // Then remove this line
         this.state.set("observation", observation);
+        this.state.set("debugspheres", [...debugspheres]);
+        this.state.set("debugtext", [...debugtext]);
+      }
+    } else if (key === "debug") {
+      for (const debug of value.debug) {
+        if (debug.draw) {
+          for (const type in debug.draw) {
+            let list = this.state.get("debug" + type);
+
+            if (list) {
+              // TODO: Remove once the timer.js sync function is ready
+              list.length = 0;
+            } else {
+              list = [];
+              this.state.set("debug" + type, list);
+            }
+
+            for (const element of debug.draw[type]) {
+              list.push(element);
+            }
+          }
+        }
       }
     }
   }

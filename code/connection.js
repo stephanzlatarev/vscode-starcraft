@@ -48,8 +48,19 @@ class Connection {
   receive(data) {
     try {
       const decoded = Response.decode(data);
+
+      if (decoded.debug) {
+        const request = Request.toObject(Request.decode(data), { bytes: Array, longs: String, defaults: true });
+
+        if (this.callback) {
+          this.callback("debug", request.debug, decoded.status);
+        }
+
+        return this.resolve(request.debug);
+      }
+
       const response = Response.toObject(decoded, { bytes: Array, longs: String, defaults: true });
-      
+
       for (const key in response) {
         const field = Response.fields[key];
 

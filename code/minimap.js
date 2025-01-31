@@ -22,6 +22,7 @@ class MiniMap {
     this.container = null;
     this.gameInfo = null;
     this.observation = null;
+    this.debugSpheres = null;
     
     timer.remove(this.tick);
   }
@@ -36,6 +37,7 @@ class MiniMap {
     // Clear cached data so that it's posted again
     this.gameInfo = null;
     this.observation = null;
+    this.debugSpheres = null;
 
     timer.add(this.tick, 1000);
   }
@@ -45,6 +47,7 @@ class MiniMap {
     
     const gameInfo = game.get("gameInfo");
     const observation = game.get("observation");
+    const debugSpheres = game.get("debugspheres");
 
     // The minimap refreshes rarely. Telling the timer nothing changed allows it to attempt a refresh sooner
     let isChanged = false;
@@ -71,9 +74,20 @@ class MiniMap {
       isChanged = true;
     }
 
+    if (debugSpheres && (debugSpheres !== this.debugSpheres)) {
+      this.container.webview.postMessage({ type: "debug", spheres: debugSpheres.map(one => ({ x: one.p.x, y: one.p.y, r: one.r, color: debugColor(one.color) })) });
+
+      this.debugSpheres = debugSpheres;
+      isChanged = true;
+    }
+
     return isChanged;
   }
 
+}
+
+function debugColor(rgb) {
+  return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
 }
 
 module.exports = new MiniMap();
