@@ -5,9 +5,12 @@ const minimap = require("./minimap.js");
 const timer = require("./timer.js");
 const units = require("./units.js");
 
+const SPAN_MIN = 9;
+const SPAN_MID = 35;
+
 class Camera {
 
-  span = 25;
+  mapbox = { minx: 0, maxx: 0, miny: 300, maxy: 300, maxspan: 300 };
   renderedViewBox = null;
 
   tick = this.refresh.bind(this);
@@ -25,6 +28,8 @@ class Camera {
     container.webview.onDidReceiveMessage(function(message) {
       if (message.type === "viewbox") this.viewbox = message.viewbox;
       if (message.event === "click") this.select(findUnit(this.viewbox, message.x, message.y));
+      if (message.event === "scroll") this.move(message.x, message.y);
+      if (message.event === "wheel") this.zoom(message.x, message.y, message.delta);
     }.bind(this));
 
     this.renew();
@@ -38,31 +43,84 @@ class Camera {
     timer.remove(this.tick);
   }
 
-  select(unit) {
-    if (unit) {
-      if (unit.pos) {
-        this.move(unit.pos.x, unit.pos.y, unit.tag);
-      } else {
-        this.move(unit.x, unit.y, unit.tag);
-      }
-    } else {
-      details.onSelect(null);
-    }
+  move(x, y, span) {
+    if (!x || !y) return;
+    if (!this.mapbox) return;
+    if (!this.focus) this.focus = { x, y, span: span || SPAN_MID };
 
-    this.container.webview.postMessage({ type: "select", unit: (unit ? unit.tag : null) });
+    span = span || this.focus.span;
+
+    if (x < this.mapbox.minx) x = this.mapbox.minx;
+    if (x > this.mapbox.maxx) x = this.mapbox.maxx;
+    if (y < this.mapbox.miny) y = this.mapbox.miny;
+    if (y > this.mapbox.maxy) y = this.mapbox.maxy;
+
+    this.focus.x = x;
+    this.focus.y = y;
+    this.focus.span = span;
+    this.focus.tag = null;
+
+    post(this, { type: "viewbox", viewbox: this.focus });
+
+    minimap.onCameraMove(x, y, span);
   }
 
-  move(x, y, tag) {
-    if (!x || !y) return;
+  select(unit) {
+    let tag;
 
-    this.focus = { x, y, tag };
+    if (unit) {
+      tag = unit.tag;
 
-    if (this.container) {
-      this.container.webview.postMessage({ type: "viewbox", viewbox: { x, y, span: this.span } });
+      if (unit.pos) {
+        this.move(unit.pos.x, unit.pos.y);
+      } else {
+        this.move(unit.x, unit.y);
+      }
+    } else if (!this.focus) {
+      // Selection is possible only when camera is already set
+      return;
+    } else {
+      tag = null;
     }
 
+    this.focus.tag = tag;
+
+    post(this, { type: "select", unit: tag });
+
     details.onSelect(tag);
-    minimap.onCameraMove(x, y, this.span);
+  }
+
+  zoom(x, y, delta) {
+    if (!this.mapbox || !this.focus) return;
+
+    let tag = this.focus.tag;
+    let newspan = this.focus.span;
+
+    newspan += newspan * 0.1 * Math.sign(delta);
+
+    if (newspan < SPAN_MIN) newspan = SPAN_MIN;
+    if (newspan > this.mapbox.maxspan) newspan = this.mapbox.maxspan;
+
+    const ratio = newspan / this.focus.span;
+    const slide = 1 - ratio;
+    const newx = this.focus.x + (x - this.focus.x) * slide;
+    const newy = this.focus.y + (y - this.focus.y) * slide;
+
+    this.move(newx, newy, newspan);
+
+    if (tag && this.viewbox) {
+      // If tagged unit is still on screen then continue following it
+      const unit = units.list().find(unit => (unit.tag === tag));
+
+      if (unit) {
+        const width = this.viewbox.width * ratio;
+        const height = this.viewbox.height * ratio;
+
+        if (isOnCamera(unit, { left: newx - width / 2, top: newy - height / 2, width, height })) {
+          this.focus.tag = tag;
+        }
+      }
+    }
   }
 
   renew() {
@@ -71,11 +129,11 @@ class Camera {
     this.observation = null;
 
     if (this.container.visible) {
-      this.container.webview.postMessage({ type: "icons", path: files.getIconsPath(this.container.webview) });
+      post(this, { type: "icons", path: files.getIconsPath(this.container.webview) });
 
       // Recover the focus
       if (this.focus) {
-        this.move(this.focus.x, this.focus.y, this.focus.tag);
+        this.move(this.focus.x, this.focus.y, this.focus.span);
       }
     }
 
@@ -90,10 +148,13 @@ class Camera {
 
     if (gameInfo && (gameInfo !== this.gameInfo)) {
       const { placementGrid, pathingGrid } = gameInfo.startRaw;
-
-      this.container.webview.postMessage({ type: "grid", size: placementGrid.size, placement: placementGrid.data, pathing: pathingGrid.data });
+      const { p0, p1 } = gameInfo.startRaw.playableArea;
 
       this.gameInfo = gameInfo;
+      this.mapbox = { minx: p0.x, maxx: p1.x, miny: p0.y, maxy: p1.y, maxspan: Math.max(p1.x - p0.x, p1.y - p0.y) * 2 };
+
+      post(this, { type: "mapbox", mapbox: this.mapbox });
+      post(this, { type: "grid", size: placementGrid.size, placement: placementGrid.data, pathing: pathingGrid.data });
     }
 
     if (observation && ((observation !== this.observation) || (this.renderedViewBox !== this.viewbox))) {
@@ -101,18 +162,19 @@ class Camera {
 
       if (!this.focus) {
         this.select(list.find(unit => ((unit.owner === 1) && (unit.r > 1))) || units.list().find(unit => ((unit.owner === 1) && (unit.r > 1))));
-      } else if (this.focus.tag) {
+      } else if (this.viewbox && this.focus.tag) {
         const unit = list.find(unit => (unit.tag === this.focus.tag));
 
-        if (unit && ((unit.x !== this.focus.x) || (unit.y !== this.focus.y))) {
-          this.move(unit.x, unit.y, unit.tag);
+        if (unit && !isOnCamera(unit, this.viewbox)) {
+          this.move(unit.x, unit.y);
+          this.focus.tag = unit.tag;
         }
       }
 
-      this.container.webview.postMessage({ type: "units", units: list });
-
       this.observation = observation;
       this.renderedViewBox = this.viewbox;
+
+      post(this, { type: "units", units: list });
     }
   }
 
@@ -139,6 +201,16 @@ function findUnit(viewbox, x, y) {
   }
 
   return bestUnit;
+}
+
+function isOnCamera(unit, viewbox) {
+  return (unit.x > viewbox.left) && (unit.y > viewbox.top) && (unit.x < viewbox.left + viewbox.width) && (unit.y < viewbox.top + viewbox.height);
+}
+
+function post(controls, message) {
+  if (controls.container) {
+    controls.container.webview.postMessage(message);
+  }
 }
 
 module.exports = new Camera();

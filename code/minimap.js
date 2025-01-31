@@ -53,8 +53,10 @@ class MiniMap {
       const { p0, p1 } = gameInfo.startRaw.playableArea;
       const { placementGrid, pathingGrid } = gameInfo.startRaw;
       const box = { left: p0.x, top: p0.y, width: p1.x - p0.x, height: p1.y - p0.y };
+      const mapbox = { minx: p0.x, maxx: p1.x, miny: p0.y, maxy: p1.y };
 
       this.container.title = gameInfo.mapName;
+      this.container.webview.postMessage({ type: "mapbox", mapbox });
       this.container.webview.postMessage({ type: "viewbox", viewbox: box });
       this.container.webview.postMessage({ type: "grid", size: placementGrid.size, placement: placementGrid.data, pathing: pathingGrid.data });
 

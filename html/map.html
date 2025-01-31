@@ -38,7 +38,7 @@ html, body {
 
 <body>
 <svg id="map" width="100" height="100" viewBox="0 0 0 0" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="1000" height="1000" fill="black" />
+  <rect x="-1000" y="-1000" width="2000" height="2000" fill="black" />
   <g id="grid" style="stroke: none"></g>
   <g id="zonelines" style="stroke: darkgoldenrod; stroke-width: 0.4; fill: none;"></g>
   <g id="zonetexts" style="fill: darkgoldenrod; font-size: 8"></g>
@@ -50,7 +50,6 @@ html, body {
 
 <script>
 const ZOOM_ICONS_THRESHOLD = 100;
-const ZOOM_RATIO = 35 / 1000;
 const OWNER_COLOR = ["white", "blue", "red"];
 const ZONE_COLS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
@@ -62,6 +61,7 @@ const layerMouse = document.getElementById("mouse");
 const vscode = acquireVsCodeApi();
 
 let viewbox = { left: 0, top: 0, width: 0, height: 0 };
+let mapbox;
 let camera = null;
 let iconspath = null;
 let grid = null;
@@ -89,7 +89,7 @@ function setViewBox(box) {
   if ((box === viewbox) || ((box.left === viewbox.left) && (box.top === viewbox.top) && (box.width === viewbox.width) && (box.height === viewbox.height))) {
     // Viewbox doesn't change
   } else if ((box.x >= 0) && (box.y >= 0)) {
-    const width = window.innerWidth * ZOOM_RATIO;
+    const width = window.innerWidth * box.span / 1000;
     const height = width * window.innerHeight / window.innerWidth;
 
     viewbox = {
@@ -105,11 +105,11 @@ function setViewBox(box) {
     camera = null;
   }
 
-  if (grid) {
-    const minx = Math.floor(viewbox.left);
-    const maxx = Math.ceil(viewbox.left + viewbox.width);
-    const miny = Math.floor(viewbox.top);
-    const maxy = Math.ceil(viewbox.top + viewbox.height);
+  if (grid && mapbox) {
+    const minx = Math.floor(Math.max(mapbox.minx, viewbox.left));
+    const maxx = Math.ceil(Math.min(mapbox.maxx, viewbox.left + viewbox.width));
+    const miny = Math.floor(Math.max(mapbox.miny, viewbox.top));
+    const maxy = Math.ceil(Math.min(mapbox.maxy, viewbox.top + viewbox.height));
     const svg = [];
 
     for (let x = minx; x < maxx; x++) {
@@ -125,7 +125,11 @@ function setViewBox(box) {
     layerGrid.innerHTML = svg.join("");
   }
 
-  if (viewbox.width >= ZOOM_ICONS_THRESHOLD) {
+  if (
+    mapbox &&
+    (viewbox.left === mapbox.minx) && (viewbox.top === mapbox.miny) &&
+    (viewbox.left + viewbox.width === mapbox.maxx) && (viewbox.top + viewbox.height === mapbox.maxy)
+  ) {
     const lines = [];
     const texts = [];
     const stepx = viewbox.width / 10;
@@ -144,6 +148,9 @@ function setViewBox(box) {
 
     document.getElementById("zonelines").innerHTML = lines.join("");
     document.getElementById("zonetexts").innerHTML = texts.join("");
+  } else {
+    document.getElementById("zonelines").innerHTML = "";
+    document.getElementById("zonetexts").innerHTML = "";
   }
 
   map.setAttribute("viewBox", [viewbox.left, viewbox.top, viewbox.width, viewbox.height].join(" "));
@@ -258,7 +265,7 @@ function setUnits(units) {
 }
 
 function getCellColor(x, y) {
-  if (!grid || (x < 0) || (x > grid.size.x) || (y < 0) || (y > grid.size.y)) return "brown";
+  if (!grid || (x < 0) || (x > grid.size.x) || (y < 0) || (y > grid.size.y)) return "black";
 
   const index = x + y * grid.size.x;
   const pos = 7 - index % 8;
@@ -286,6 +293,7 @@ window.addEventListener("message", function({ data }) {
     case "focus": return setFocus(data.x, data.y, data.span);
     case "icons": return setIconsPath(data.path);
     case "grid": return setGrid(data.size, data.placement, data.pathing);
+    case "mapbox": return mapbox = data.mapbox;
     case "reset": return resetCamera();
     case "select": return (selection = data.unit);
     case "units": return setUnits(data.units);
@@ -314,24 +322,30 @@ window.addEventListener("keyup", function(event) {
   lastKeyHold = false;
 });
 function moveCamera(arrow, step) {
+  let x = camera.x;
+  let y = camera.y;
+
   if (arrow === "ArrowLeft") {
-    camera.x -= step;
+    x -= step;
   } else if (arrow === "ArrowUp") {
-    camera.y -= step;
+    y -= step;
   } else if (arrow === "ArrowRight") {
-    camera.x += step;
+    x += step;
   } else if (arrow === "ArrowDown") {
-    camera.y += step;
+    y += step;
   }
 
-  camera.x = Math.max(camera.x, 0);
-  camera.x = Math.min(camera.x, 250);
-  camera.y = Math.max(camera.y, 0);
-  camera.y = Math.min(camera.y, 250);
-
-  setViewBox(camera);
-  vscode.postMessage({ type: "move", ...viewbox });
+  vscode.postMessage({ event: "scroll", x, y });
 }
+
+window.addEventListener("wheel", function(event) {
+  vscode.postMessage({
+    event: "wheel",
+    delta: event.deltaY,
+    x: Math.round(viewbox.left + event.offsetX * viewbox.width / window.innerWidth),
+    y: Math.round(viewbox.top + event.offsetY * viewbox.height / window.innerHeight),
+  });
+});
 
 layerMouse.addEventListener("click", function(event) {
   vscode.postMessage({
