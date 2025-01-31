@@ -71,14 +71,27 @@ function getUnitBasicInfo(unit) {
 }
 
 function getUnitDetailedInfo(unit) {
+  const unitType = Types.unit(unit.unitType);
+  let product;
+
+  if ((unitType.kind === 1) && unit.orders.length) {
+    const order = unit.orders[0];
+    const productType = Types.product(order.abilityId);
+
+    if (productType) {
+      product = { type: productType, progress: order.progress };
+    }
+  }
+
   return {
-    type: Types.unit(unit.unitType),
+    type: unitType,
     tag: unit.tag,
     owner: unit.owner,
     x: unit.pos.x,
     y: unit.pos.y,
     z: unit.pos.z,
     r: unit.radius,
+    product: product,
     wip: (unit.displayType === 4) || (unit.buildProgress < 1),
     cloak: (unit.cloak !== 3),
   };

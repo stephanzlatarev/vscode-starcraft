@@ -7,14 +7,19 @@ class Types {
   static KIND_VESPENE_GEYSER = 3;
 
   abilities = new Map();
+  products = new Map();
   units = new Map();
 
   ability(id) {
     return this.abilities.get(id) || "";
   }
 
+  product(id) {
+    return this.products.get(id);
+  }
+
   unit(id) {
-    return this.units.get(id) || { kind: "Unknown", name: id, alias: null };
+    return this.units.get(id) || { kind: -1, name: id, alias: null };
   }
 
   read(data) {
@@ -24,6 +29,9 @@ class Types {
       for (const ability of data.abilities) {
         if (ability.available && ability.linkName) {
           this.abilities.set(ability.abilityId, ability.linkName);
+        }
+        if (ability.available && ability.buttonName) {
+          this.products.set(ability.abilityId, ability.buttonName);
         }
       }
     }
