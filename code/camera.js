@@ -39,6 +39,7 @@ class Camera {
     this.container = null;
     this.gameInfo = null;
     this.observation = null;
+    this.debugSpheres = null;
 
     timer.remove(this.tick);
   }
@@ -127,6 +128,7 @@ class Camera {
     // Clear cached data so that it's posted again
     this.gameInfo = null;
     this.observation = null;
+    this.debugSpheres = null;
 
     if (this.container.visible) {
       post(this, { type: "icons", path: files.getIconsPath(this.container.webview) });
@@ -145,6 +147,7 @@ class Camera {
 
     const gameInfo = game.get("gameInfo");
     const observation = game.get("observation");
+    const debugSpheres = game.get("debugspheres");
 
     if (gameInfo && (gameInfo !== this.gameInfo)) {
       const { placementGrid, pathingGrid } = gameInfo.startRaw;
@@ -176,6 +179,20 @@ class Camera {
 
       post(this, { type: "units", units: list });
     }
+
+    if (debugSpheres && (debugSpheres !== this.debugSpheres)) {
+      const spheres = [];
+
+      for (const sphere of debugSpheres) {
+        if ((sphere.r < 3) && isOnCamera(sphere.p, this.viewbox)) {
+          spheres.push({ x: sphere.p.x, y: sphere.p.y, r: sphere.r, color: debugColor(sphere.color) });
+        }
+      }
+
+      this.container.webview.postMessage({ type: "debug", spheres });
+
+      this.debugSpheres = debugSpheres;
+    }
   }
 
 }
@@ -205,6 +222,10 @@ function findUnit(viewbox, x, y) {
 
 function isOnCamera(unit, viewbox) {
   return (unit.x > viewbox.left) && (unit.y > viewbox.top) && (unit.x < viewbox.left + viewbox.width) && (unit.y < viewbox.top + viewbox.height);
+}
+
+function debugColor(rgb) {
+  return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
 }
 
 function post(controls, message) {
