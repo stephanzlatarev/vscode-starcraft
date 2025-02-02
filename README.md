@@ -12,7 +12,7 @@ You can improve the code of your bot and troubleshoot it without leaving Visual 
 
 To run a replay, drag and drop a replay file (*.SC2Replay) into the Editor area of Visual Studio Code. If you have the file in your workspace, open it with a click.
 
-To play a game with your bot, start StarCraft II by opening the command palette with `Ctrl+Shift+P` and typing `Start StarCraft II for a bot to play`.
+To play a game with your bot, start StarCraft II by opening the command palette with `Ctrl+Shift+P` and typing `Start StarCraft II for an AI bot`.
 
 In both cases, a viewer will start checking all pre-requisites until the game is ready for viewing.
 Then the editor will show game camera.
