@@ -92,6 +92,7 @@ function getUnitDetailedInfo(unit) {
     z: unit.pos.z,
     r: unit.radius,
     product: product,
+    progress: unit.buildProgress,
     wip: (unit.displayType === 4) || (unit.buildProgress < 1),
     cloak: (unit.cloak !== 3),
   };

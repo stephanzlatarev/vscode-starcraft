@@ -254,6 +254,10 @@ function setUnits(units) {
           svg.push(`<image class="${c} ${wip} ${cloak}" x="${x}" y="${y}" width="${width * 0.95}" height="${height * 0.95}" href="${href}" ${onerror} />`);
         }
 
+        if (unit.progress < 1) {
+          svg.push(`<rect class="${c}" x="${x}" y="${y}" width="${width * 0.95}" height="${height * 0.95 * (1 - unit.progress)}" fill="#555555" opacity="0.8" />`);
+        }
+
         if (iconspath && unit.product) {
           const href = iconspath + unit.product.type + ".webp";
           const onerror = `onerror="this.style.display='none'"`;
