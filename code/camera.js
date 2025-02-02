@@ -27,7 +27,6 @@ class Camera {
 
     container.webview.onDidReceiveMessage(function(message) {
       if (message.type === "viewbox") this.viewbox = message.viewbox;
-      if (message.event === "click") this.select(findUnit(this.viewbox, message.x, message.y));
       if (message.event === "scroll") this.move(message.x, message.y);
       if (message.event === "wheel") this.zoom(message.x, message.y, message.delta);
     }.bind(this));
@@ -195,29 +194,6 @@ class Camera {
     }
   }
 
-}
-
-function findUnit(viewbox, x, y) {
-  const list = units.list(viewbox);
-
-  let bestUnit;
-  let bestSquareDistance;
-
-  for (const unit of list) {
-    if ((unit.owner !== 1) && bestUnit && (bestUnit.owner === 1)) continue;
-
-    const squareDistance = (unit.x - x) * (unit.x - x) + (unit.y - y) * (unit.y - y);
-    const squareRadius = (unit.r + 1) * (unit.r * 1);
-
-    if (squareDistance > squareRadius) continue;
-
-    if (!bestUnit || (squareDistance < bestSquareDistance)) {
-      bestUnit = unit;
-      bestSquareDistance = squareDistance;
-    }
-  }
-
-  return bestUnit;
 }
 
 function isOnCamera(unit, viewbox) {

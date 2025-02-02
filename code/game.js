@@ -143,6 +143,13 @@ class Game {
     await this.game.request(message);
   }
 
+  async spawn(owner, type, x, y) {
+    if (this.isJoined) {
+      await this.game.request({ debug: { debug: [{ createUnit: { unitType: type, owner: owner, pos: { x: x, y: y }, quantity: 1 } }] } });
+      await this.game.request({ observation: {} });
+    }
+  }
+
   history(step) {
     this.state = history.get(loop(this) + step) || this.state;
   }

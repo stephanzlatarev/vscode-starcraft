@@ -11,6 +11,29 @@ class Units {
     }
   }
 
+  find(viewbox, x, y) {
+    const list = this.list(viewbox);
+  
+    let bestUnit;
+    let bestSquareDistance;
+  
+    for (const unit of list) {
+      if ((unit.owner !== 1) && bestUnit && (bestUnit.owner === 1)) continue;
+  
+      const squareDistance = (unit.x - x) * (unit.x - x) + (unit.y - y) * (unit.y - y);
+      const squareRadius = (unit.r + 1) * (unit.r * 1);
+  
+      if (squareDistance > squareRadius) continue;
+  
+      if (!bestUnit || (squareDistance < bestSquareDistance)) {
+        bestUnit = unit;
+        bestSquareDistance = squareDistance;
+      }
+    }
+  
+    return bestUnit;
+  }
+
   list(viewbox) {
     const observation = game.get("observation");
 

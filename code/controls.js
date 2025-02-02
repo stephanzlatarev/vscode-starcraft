@@ -1,9 +1,12 @@
+const camera = require("./camera.js");
 const files = require("./files.js");
 const game = require("./game.js");
 const timer = require("./timer.js");
+const units = require("./units.js");
 
 class Controls {
 
+  action = { mode: "select" };
   tick = this.refresh.bind(this);
 
   async attach(container) {
@@ -15,11 +18,14 @@ class Controls {
     container.onDidDispose(this.detach.bind(this));
 
     container.webview.onDidReceiveMessage(function(message) {
-      if (message.event === "back") this.back();
-      if (message.event === "forth") this.forth();
-      if (message.event === "pause") this.pause();
-      if (message.event === "resume") this.resume();
-      if (message.event === "skip") this.skip();
+      switch (message.event) {
+        case "back": return this.back();
+        case "forth": return this.forth();
+        case "mouse": return this.mouse(message.action);
+        case "pause": return this.pause();
+        case "resume": return this.resume();
+        case "skip": return this.skip();
+      }
     }.bind(this));
 
     this.renew();
@@ -77,6 +83,18 @@ class Controls {
 
     post(this, { type: "forth" });
     game.history(+1);
+  }
+
+  mouse(action) {
+    this.action = action;
+  }
+
+  click(x, y) {
+    if (this.action.mode === "select") {
+      camera.select(units.find(camera.viewbox, x, y));
+    } else if (this.action.mode === "spawn") {
+      game.spawn(2, 66, x, y);
+    }
   }
 
   pause(toggle) {
