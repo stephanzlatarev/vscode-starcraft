@@ -120,7 +120,7 @@ async function start(container, document) {
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", true);
 
   camera.attach(container);
-  controls.showControls(!!document);
+  controls.setConfig(document ? {} : { skip: false });
   
   container.webview.onDidReceiveMessage(function(message) {
     if (message.event === "pause") {

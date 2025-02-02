@@ -43,30 +43,31 @@ const LOOPS_PER_SECOND = 22.4;
 const LOOPS_PER_MINUTE = LOOPS_PER_SECOND * 60;
 
 const vscode = acquireVsCodeApi();
+let config = {};
 let isStarted;
 
 const commands = {
   back: () => {},
   forth: () => {},
-  pause: () => {
-    document.getElementById("back").style.display = "block";
-    document.getElementById("forth").style.display = "block";
-    document.getElementById("pause").style.display = "none";
-    document.getElementById("resume").style.display = "block";
-    document.getElementById("skip").style.display = "none";
-  },
-  resume: () => {
-    document.getElementById("back").style.display = "none";
-    document.getElementById("forth").style.display = "none";
-    document.getElementById("pause").style.display = "block";
-    document.getElementById("resume").style.display = "none";
-    document.getElementById("skip").style.display = "block";
-  },
+  pause: () => showControls({ pause: false, skip: false }),
+  resume: () => showControls({ back: false, forth: false, resume: false }),
   skip: () => {},
 };
 
-function showControls(flag) {
-  document.getElementById("controls").style.display = flag ? "block" : "none";
+function showControls(state) {
+  for (const id in commands) {
+    document.getElementById(id).style.display = ((config[id] === false) || (state[id] === false)) ? "none" : "block";
+  }
+}
+
+function setConfig(data) {
+  config = data;
+
+  showControls({});
+
+  for (const id in commands) {
+    if (config[id] !== false) commands[id]();
+  }
 }
 
 function setObservation(loop, player) {
@@ -94,7 +95,7 @@ function setObservation(loop, player) {
 
 window.addEventListener("message", function({ data }) {
   switch (data.type) {
-    case "controls": return showControls(data.enabled);
+    case "config": return setConfig(data.config);
     case "observation": return setObservation(data.loop, data.player);
     default: if (commands[data.type]) commands[data.type]();
   }

@@ -30,6 +30,8 @@ class Game {
 
   async connect() {
     await this.game.connect();
+
+    this.game.send(Connection.CODE_RESUME);
   }
 
   get(key) {
@@ -60,9 +62,9 @@ class Game {
         // TODO: View refresh and click handling requires an observation
         // Implement a sync fynction in timer.js that runs only between game steps when the observation is available
         // Then remove this line
-        this.state.set("observation", observation);
-        this.state.set("debugspheres", [...debugspheres]);
-        this.state.set("debugtext", [...debugtext]);
+        if (observation) this.state.set("observation", observation);
+        if (debugspheres) this.state.set("debugspheres", [...debugspheres]);
+        if (debugtext) this.state.set("debugtext", [...debugtext]);
       }
     } else if (key === "debug") {
       for (const debug of value.debug) {
@@ -146,10 +148,14 @@ class Game {
   }
 
   pause() {
+    if (this.game && !this.isPaused) this.game.send(Connection.CODE_PAUSE);
+
     this.isPaused = true;
   }
 
   resume() {
+    if (this.game && this.isPaused) this.game.send(Connection.CODE_RESUME);
+
     this.isPaused = false;
   }
 

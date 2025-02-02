@@ -6,6 +6,9 @@ const Response = protocol.lookupType("Response");
 
 class Connection {
 
+  static CODE_PAUSE = 1;
+  static CODE_RESUME = 2;
+
   constructor(uri, callback) {
     this.uri = uri;
     this.callback = callback;
@@ -30,6 +33,10 @@ class Connection {
     }
 
     throw new Error("Unable to connect");
+  }
+
+  send(code) {
+    this.socket.send(new Uint8Array([code]));
   }
 
   async request(message) {

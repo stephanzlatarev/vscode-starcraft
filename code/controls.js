@@ -34,7 +34,7 @@ class Controls {
     // Clear cached data so that it's posted again
     this.observation = null;
 
-    this.showControls(this.isShowingControls);
+    this.setConfig(this.config);
 
     timer.add(this.tick, 40);
   }
@@ -54,11 +54,15 @@ class Controls {
       this.observation = observation;
     }
 
-    post(this, { type: "controls", enabled: this.isShowingControls });
+    if (this.activeConfig !== this.config) {
+      post(this, { type: "config", config: this.config });
+
+      this.activeConfig = this.config;
+    }
   }
 
-  showControls(flag) {
-    this.isShowingControls = !!flag;
+  setConfig(flags) {
+    this.config = { ...flags };
   }
 
   back() {

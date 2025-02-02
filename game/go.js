@@ -4,11 +4,21 @@ import { spawn } from "node:child_process";
 const PORT_API = Number(process.env.PORT_API) || 5000;
 const PORT_LOG = Number(process.env.PORT_LOG) || 5001;
 
+const CODE_PAUSE = 1;
+const CODE_RESUME = 2;
+
 let socketToGame;
 let socketToBot;
 let socketToObserver;
 
-let request;
+let request = null;
+let isPaused = false;
+
+function setPaused(flag) {
+  console.log(flag ? "Game paused" : "Game resumed");
+
+  isPaused = flag;
+}
 
 function listenForObservers() {
   console.error("Listening for observer...");
@@ -21,6 +31,11 @@ function listenForObservers() {
     socket.on("error", console.error);
 
     socket.on("message", function(data) {
+      switch (data[0]) {
+        case CODE_PAUSE: return setPaused(true);
+        case CODE_RESUME: return setPaused(false);
+      }
+
       if (socket) sendToGame(socket, data);
     });
 
@@ -86,7 +101,7 @@ function connectToGame() {
     
       socket.on("message", function(data) {
         if (socketToObserver) socketToObserver.send(data);
-        if (socketToBot && (request.caller === socketToBot)) socketToBot.send(data);
+        if (request && socketToBot && (request.caller === socketToBot)) socketToBot.send(data);
     
         request = null;
       });
@@ -105,6 +120,7 @@ function connectToGame() {
 async function sendToGame(caller, data) {
   while (!socketToGame) await sleep(10);
   while (request) await sleep(10);
+  while (isPaused) await sleep(10);
 
   request = { caller, data };
 
