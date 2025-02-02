@@ -130,6 +130,11 @@ class Game {
     while (!this.isJoined && !this.isClosed) {
       await sleep(200);
     }
+
+    if (this.isJoined) {
+      await this.game.request({ data: { abilityId: true, unitTypeId: true } });
+      await this.game.request({ gameInfo: {} });
+    }
   }
 
   async request(message) {
