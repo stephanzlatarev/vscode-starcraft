@@ -61,14 +61,19 @@ class MiniMap {
       this.container.title = gameInfo.mapName;
       this.container.webview.postMessage({ type: "mapbox", mapbox });
       this.container.webview.postMessage({ type: "viewbox", viewbox: box });
-      this.container.webview.postMessage({ type: "grid", size: placementGrid.size, placement: placementGrid.data, pathing: pathingGrid.data });
+      this.container.webview.postMessage({ type: "grid", placement: placementGrid, pathing: pathingGrid });
 
       this.gameInfo = gameInfo;
       isChanged = true;
     }
 
     if (observation && (observation !== this.observation)) {
-      this.container.webview.postMessage({ type: "units", units: units.list() });
+      this.container.webview.postMessage({
+        type: "units",
+        units: units.list(),
+        fog: observation.observation.rawData.mapState.visibility,
+        creep: observation.observation.rawData.mapState.creep,
+      });
 
       this.observation = observation;
       isChanged = true;

@@ -156,7 +156,7 @@ class Camera {
       this.mapbox = { minx: p0.x, maxx: p1.x, miny: p0.y, maxy: p1.y, maxspan: Math.max(p1.x - p0.x, p1.y - p0.y) * 2 };
 
       post(this, { type: "mapbox", mapbox: this.mapbox });
-      post(this, { type: "grid", size: placementGrid.size, placement: placementGrid.data, pathing: pathingGrid.data });
+      post(this, { type: "grid", placement: placementGrid, pathing: pathingGrid });
     }
 
     if (observation && ((observation !== this.observation) || (this.renderedViewBox !== this.viewbox))) {
@@ -175,8 +175,13 @@ class Camera {
 
       this.observation = observation;
       this.renderedViewBox = this.viewbox;
-
-      post(this, { type: "units", units: list });
+      
+      post(this, {
+        type: "units",
+        units: list,
+        fog: observation.observation.rawData.mapState.visibility,
+        creep: observation.observation.rawData.mapState.creep,
+      });
     }
 
     if (debugSpheres && (debugSpheres !== this.debugSpheres)) {

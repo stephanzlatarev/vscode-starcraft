@@ -40,10 +40,12 @@ html, body {
 <svg id="map" width="100" height="100" viewBox="0 0 0 0" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
   <rect x="-1000" y="-1000" width="2000" height="2000" fill="black" />
   <g id="grid" style="stroke: none"></g>
+  <g id="creep"></g>
   <g id="debug" opacity="0.2"></g>
   <g id="zonelines" style="stroke: darkgoldenrod; stroke-width: 0.4; fill: none;"></g>
   <g id="zonetexts" style="fill: darkgoldenrod; font-size: 8"></g>
   <g id="units"></g>
+  <g id="fog"></g>
   <g id="focus" style="stroke: gold; stroke-width: 0.4; fill: none"></g>
 </svg>
 <div id="mouse" />
@@ -55,8 +57,10 @@ const OWNER_COLOR = ["white", "blue", "red"];
 const ZONE_COLS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
 const map = document.getElementById("map");
+const layerCreep = document.getElementById("creep");
 const layerDebug = document.getElementById("debug");
 const layerFocus = document.getElementById("focus");
+const layerFog = document.getElementById("fog");
 const layerGrid = document.getElementById("grid");
 const layerUnits = document.getElementById("units");
 const layerMouse = document.getElementById("mouse");
@@ -82,8 +86,10 @@ function resetCamera() {
   selection = null;
 
   map.setAttribute("viewBox", "0 0 0 0");
+  layerCreep.replaceChildren();
   layerDebug.replaceChildren();
   layerFocus.replaceChildren();
+  layerFog.replaceChildren();
   layerGrid.replaceChildren();
   layerUnits.replaceChildren();
 }
@@ -108,7 +114,7 @@ function setViewBox(box) {
     camera = null;
   }
 
-  if (grid && mapbox) {
+  if (mapbox && grid) {
     const minx = Math.floor(Math.max(mapbox.minx, viewbox.left));
     const maxx = Math.ceil(Math.min(mapbox.maxx, viewbox.left + viewbox.width));
     const miny = Math.floor(Math.max(mapbox.miny, viewbox.top));
@@ -117,10 +123,10 @@ function setViewBox(box) {
 
     for (let x = minx; x < maxx; x++) {
       for (let y = miny; y < maxy; y++) {
-        const color = getCellColor(x, y);
-
-        if (color) {
-          svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="${color}" />`);
+        if (isCellOn(grid.placement, x, y)) {
+          svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="#CCCCCC" />`);
+        } else if (isCellOn(grid.pathing, x, y)) {
+          svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="#AAAAAA" />`);
         }
       }
     }
@@ -165,8 +171,8 @@ function setFocus(x, y, span) {
   layerFocus.innerHTML = `<rect x="${x - span / 2}" y=${y - span / 2} width="${span}" height="${span}" />`;
 }
 
-function setGrid(size, placement, pathing) {
-  grid = { size, placement, pathing };
+function setGrid(placement, pathing) {
+  grid = { placement, pathing };
 
   setViewBox(viewbox);
 }
@@ -181,7 +187,7 @@ function setDebug(spheres) {
   layerDebug.innerHTML = svg.join("");
 }
 
-function setUnits(units) {
+function setUnits(units, fog, creep) {
   const svg = [];
 
   if (viewbox.width < ZOOM_ICONS_THRESHOLD) {
@@ -279,22 +285,49 @@ function setUnits(units) {
   }
 
   layerUnits.innerHTML = svg.join("");
+
+  if (mapbox && (fog || creep)) {
+    const minx = Math.floor(Math.max(mapbox.minx, viewbox.left));
+    const maxx = Math.ceil(Math.min(mapbox.maxx, viewbox.left + viewbox.width));
+    const miny = Math.floor(Math.max(mapbox.miny, viewbox.top));
+    const maxy = Math.ceil(Math.min(mapbox.maxy, viewbox.top + viewbox.height));
+    const creepsvg = [];
+    const fogsvg = [];
+
+    for (let x = minx; x < maxx; x++) {
+      for (let y = miny; y < maxy; y++) {
+        if (isCellOn(creep, x, y)) {
+          creepsvg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="purple" opacity="0.5" />`);
+        }
+        if (!isCellOn(fog, x, y)) {
+          fogsvg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="black" opacity="0.2" />`);
+        }
+      }
+    }
+
+    layerCreep.innerHTML = creepsvg.join("");
+    layerFog.innerHTML = fogsvg.join("");
+  }
 }
 
-function getCellColor(x, y) {
-  if (!grid || (x < 0) || (x > grid.size.x) || (y < 0) || (y > grid.size.y)) return "black";
+function isCellOn(grid, x, y) {
+  if (!grid) return;
+  if ((x < 0) || (x > grid.size.x)) return;
+  if ((y < 0) || (y > grid.size.y)) return;
 
   const index = x + y * grid.size.x;
-  const pos = 7 - index % 8;
-  const mask = 1 << pos;
-  const bit = Math.floor(index / 8);
 
-  if (grid.placement[bit] & mask) {
-    // Placement cell
-    return "#CCCCCC";
-  } else if (grid.pathing[bit] & mask) {
-    // Pathing cell
-    return "#AAAAAA";
+  switch (grid.bitsPerPixel) {
+    case 1: {
+      const pos = 7 - index % 8;
+      const mask = 1 << pos;
+      const bit = Math.floor(index / 8);
+
+      return (grid.data[bit] & mask);
+    }
+    case 8: {
+      return grid.data[index];
+    }
   }
 }
 
@@ -310,11 +343,11 @@ window.addEventListener("message", function({ data }) {
     case "debug": return setDebug(data.spheres);
     case "focus": return setFocus(data.x, data.y, data.span);
     case "icons": return setIconsPath(data.path);
-    case "grid": return setGrid(data.size, data.placement, data.pathing);
+    case "grid": return setGrid(data.placement, data.pathing);
     case "mapbox": return mapbox = data.mapbox;
     case "reset": return resetCamera();
     case "select": return (selection = data.unit);
-    case "units": return setUnits(data.units);
+    case "units": return setUnits(data.units, data.fog, data.creep);
     case "viewbox": return setViewBox(data.viewbox);
   }
 });
