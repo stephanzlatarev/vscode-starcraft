@@ -4,6 +4,8 @@ const files = require("./files.js");
 const history = require("./history.js");
 const Types = require("./types.js");
 
+let spawnIds = 1;
+
 class Game {
 
   game = new Connection("ws://127.0.0.1:5001/sc2api", this.onEvent.bind(this));
@@ -144,9 +146,23 @@ class Game {
   }
 
   async spawn(owner, type, x, y) {
-    if (this.isJoined) {
+    if (this.isJoined && owner && type && x && y) {
       await this.game.request({ debug: { debug: [{ createUnit: { unitType: type, owner: owner, pos: { x: x, y: y }, quantity: 1 } }] } });
-      await this.game.request({ observation: {} });
+
+      // Add the spawned unit to the observation
+      const observation = {...this.state.get("observation")};
+      observation.observation.rawData.units.push({
+        tag: "SPAWN-" + (spawnIds++),
+        unitType: type,
+        owner: owner,
+        pos: { x, y, z: 0 },
+        radius: 0.5,
+        orders: [],
+        cloak: 3,
+        buildProgress: 1,
+        displayType: 4,
+      });
+      this.state.set("observation", observation);
     }
   }
 

@@ -2,6 +2,7 @@ const camera = require("./camera.js");
 const files = require("./files.js");
 const game = require("./game.js");
 const timer = require("./timer.js");
+const Types = require("./types.js");
 const units = require("./units.js");
 
 class Controls {
@@ -39,6 +40,8 @@ class Controls {
   renew() {
     // Clear cached data so that it's posted again
     this.observation = null;
+    this.activeConfig = null;
+    this.activeTypes = null;
 
     this.setConfig(this.config);
 
@@ -64,6 +67,21 @@ class Controls {
       post(this, { type: "config", config: this.config });
 
       this.activeConfig = this.config;
+    }
+
+    if (this.activeTypes !== Types.units.size) {
+      const types = [];
+
+      for (const [id, type] of Types.units) {
+        if (type.alias === type.name) {
+          types.push({ id, name: type.name });
+        }
+      }
+      types.sort((a, b) => a.name.localeCompare(b.name));
+
+      post(this, { type: "types", types: types });
+
+      this.activeTypes = Types.units.size;
     }
   }
 
@@ -93,7 +111,7 @@ class Controls {
     if (this.action.mode === "select") {
       camera.select(units.find(camera.viewbox, x, y));
     } else if (this.action.mode === "spawn") {
-      game.spawn(2, 66, x, y);
+      game.spawn(this.action.owner, this.action.type, x, y);
     }
   }
 

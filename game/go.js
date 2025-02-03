@@ -120,7 +120,7 @@ function connectToGame() {
 async function sendToGame(caller, data) {
   while (!socketToGame) await sleep(10);
   while (request) await sleep(10);
-  while (isPaused) await sleep(10);
+  while (isPaused && (caller === socketToBot)) await sleep(10);
 
   request = { caller, data };
 

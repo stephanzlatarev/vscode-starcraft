@@ -39,7 +39,7 @@
     <div>
       <span id="mouse" class="button">&#x1F5B1; mouse</span>
       <span id="action-select">selects unit</span>
-      <span id="action-spawn" style="display: none">spawns enemy photon cannon</span>
+      <span id="action-spawn" style="display: none">spawns enemy <select id="action-spawn-types" /></span>
     </div>
   </div>
 </body>
@@ -49,7 +49,9 @@ const LOOPS_PER_SECOND = 22.4;
 const LOOPS_PER_MINUTE = LOOPS_PER_SECOND * 60;
 
 const vscode = acquireVsCodeApi();
+const actionSpawnTypes = document.getElementById("action-spawn-types");
 let config = {};
+let types = [];
 let action = { mode: "select" };
 let isStarted;
 
@@ -75,6 +77,18 @@ function setConfig(data) {
   for (const id in commands) {
     if (config[id] !== false) commands[id]();
   }
+}
+
+function setTypes(data) {
+  types = data;
+
+  const options = [];
+
+  for (const type of types) {
+    options.push(`<option value="${type.id}">${type.name}</option>`);
+  }
+
+  actionSpawnTypes.innerHTML = options.join("");
 }
 
 function setObservation(loop, player) {
@@ -104,6 +118,7 @@ window.addEventListener("message", function({ data }) {
   switch (data.type) {
     case "config": return setConfig(data.config);
     case "observation": return setObservation(data.loop, data.player);
+    case "types": return setTypes(data.types);
     default: if (commands[data.type]) commands[data.type]();
   }
 });
@@ -118,15 +133,24 @@ document.getElementById("mouse").addEventListener("click", () => {
   if (action.mode === "select") {
     if (config.mouse !== false) {
       action.mode = "spawn";
+      action.owner = 2;
+      action.type = Number(actionSpawnTypes.value);
       document.getElementById("action-select").style.display = "none";
       document.getElementById("action-spawn").style.display = "inline";
     }
   } else if (action.mode === "spawn") {
     action.mode = "select";
+    delete action.owner;
+    delete action.type;
     document.getElementById("action-select").style.display = "inline";
     document.getElementById("action-spawn").style.display = "none";
   }
 
+  vscode.postMessage({ event: "mouse", action });
+});
+
+actionSpawnTypes.addEventListener("change", (event) => {
+  action.type = Number(actionSpawnTypes.value);
   vscode.postMessage({ event: "mouse", action });
 });
 
