@@ -39,7 +39,8 @@
     <div>
       <span id="mouse" class="button">&#x1F5B1; mouse</span>
       <span id="action-select">selects unit</span>
-      <span id="action-spawn" style="display: none">spawns enemy <select id="action-spawn-types" /></span>
+      <span id="action-spawn" style="display: none">spawns enemy <select id="action-spawn-types"></select></span>
+      <span id="action-kill" style="display: none">kills unit</span>
     </div>
   </div>
 </body>
@@ -130,19 +131,26 @@ for (const command in commands) {
 }
 
 document.getElementById("mouse").addEventListener("click", () => {
-  if (action.mode === "select") {
+  if (action.mode === "kill") {
+    action.mode = "select";
+    document.getElementById("action-kill").style.display = "none";
+    document.getElementById("action-select").style.display = "inline";
+    document.getElementById("action-spawn").style.display = "none";
+  } else if (action.mode === "select") {
     if (config.mouse !== false) {
       action.mode = "spawn";
       action.owner = 2;
       action.type = Number(actionSpawnTypes.value);
+      document.getElementById("action-kill").style.display = "none";
       document.getElementById("action-select").style.display = "none";
       document.getElementById("action-spawn").style.display = "inline";
     }
   } else if (action.mode === "spawn") {
-    action.mode = "select";
+    action.mode = "kill";
     delete action.owner;
     delete action.type;
-    document.getElementById("action-select").style.display = "inline";
+    document.getElementById("action-kill").style.display = "inline";
+    document.getElementById("action-select").style.display = "none";
     document.getElementById("action-spawn").style.display = "none";
   }
 

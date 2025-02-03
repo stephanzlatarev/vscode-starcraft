@@ -108,7 +108,9 @@ class Controls {
   }
 
   click(x, y) {
-    if (this.action.mode === "select") {
+    if (this.action.mode === "kill") {
+      game.kill(units.find(camera.viewbox, x, y));
+    } else if (this.action.mode === "select") {
       camera.select(units.find(camera.viewbox, x, y));
     } else if (this.action.mode === "spawn") {
       game.spawn(this.action.owner, this.action.type, x, y);

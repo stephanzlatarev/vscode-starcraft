@@ -4,12 +4,14 @@ const files = require("./files.js");
 const history = require("./history.js");
 const Types = require("./types.js");
 
+const SPAWN_ID = "SPAWN-";
 let spawnIds = 1;
 
 class Game {
 
   game = new Connection("ws://127.0.0.1:5001/sc2api", this.onEvent.bind(this));
   state = new Map();
+  spawning = new Map();
   index = 1;
 
   isCreated = false;
@@ -147,22 +149,53 @@ class Game {
 
   async spawn(owner, type, x, y) {
     if (this.isJoined && owner && type && x && y) {
-      await this.game.request({ debug: { debug: [{ createUnit: { unitType: type, owner: owner, pos: { x: x, y: y }, quantity: 1 } }] } });
+      if (this.isPaused) {
+        const tag = SPAWN_ID + (spawnIds++);
 
-      // Add the spawned unit to the observation
-      const observation = {...this.state.get("observation")};
-      observation.observation.rawData.units.push({
-        tag: "SPAWN-" + (spawnIds++),
-        unitType: type,
-        owner: owner,
-        pos: { x, y, z: 0 },
-        radius: 0.5,
-        orders: [],
-        cloak: 3,
-        buildProgress: 1,
-        displayType: 4,
-      });
-      this.state.set("observation", observation);
+        this.spawning.set(tag, { createUnit: { unitType: type, owner: owner, pos: { x: x, y: y }, quantity: 1 } });
+
+        // Add the spawned unit to the observation
+        const observation = this.state.get("observation");
+        observation.observation.rawData.units.push({
+          tag: tag,
+          unitType: type,
+          owner: owner,
+          pos: { x, y, z: 0 },
+          radius: 0.5,
+          orders: [],
+          cloak: 3,
+          buildProgress: 1,
+          displayType: 4,
+        });
+        this.state.set("observation", { ...observation });
+      } else {
+        await this.game.request({ debug: { debug: [{ createUnit: { unitType: type, owner: owner, pos: { x: x, y: y }, quantity: 1 } }] } });
+      }
+    }
+  }
+
+  async kill(unit) {
+    if (this.isJoined && unit && unit.tag) {
+      if (unit.tag.startsWith(SPAWN_ID)) {
+        this.spawning.delete(unit.tag);
+      } else {
+        await this.game.request({ debug: { debug: [{ killUnit: { tag: [unit.tag] } }] } });
+      }
+
+      if (this.isPaused) {
+        // Remove the unit from the observation
+        const observation = this.state.get("observation");
+        const units = observation.observation.rawData.units;
+
+        for (let index = 0; index < units.length; index++) {
+          if (units[index].tag === unit.tag) {
+            units.splice(index, 1);
+            break;
+          }
+        }
+
+        this.state.set("observation", { ...observation });
+      }
     }
   }
 
@@ -176,8 +209,15 @@ class Game {
     this.isPaused = true;
   }
 
-  resume() {
-    if (this.game && this.isPaused) this.game.send(Connection.CODE_RESUME);
+  async resume() {
+    if (this.game && this.isPaused) {
+      if (this.spawning.size) {
+        await this.game.request({ debug: { debug: [...this.spawning.values()] } });
+      }
+
+      this.spawning.clear();
+      this.game.send(Connection.CODE_RESUME);
+    }
 
     this.isPaused = false;
   }
