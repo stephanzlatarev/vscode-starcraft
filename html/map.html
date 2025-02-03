@@ -368,8 +368,8 @@ window.addEventListener("wheel", function(event) {
 layerMouse.addEventListener("click", function(event) {
   vscode.postMessage({
     event: "click",
-    x: Math.round(viewbox.left + event.offsetX * viewbox.width / window.innerWidth),
-    y: Math.round(viewbox.top + event.offsetY * viewbox.height / window.innerHeight),
+    x: viewbox.left + event.offsetX * viewbox.width / window.innerWidth,
+    y: viewbox.top + event.offsetY * viewbox.height / window.innerHeight,
   });
 });
 
