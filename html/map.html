@@ -39,9 +39,11 @@ html, body {
 <body>
 <svg id="map" width="100" height="100" viewBox="0 0 0 0" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
   <rect x="-1000" y="-1000" width="2000" height="2000" fill="black" />
-  <g id="grid" style="stroke: none"></g>
+  <g id="pathing" style="stroke: none"></g>
+  <g id="placement" style="stroke: none"></g>
   <g id="creep"></g>
   <g id="shapes" opacity="0.2"></g>
+  <g id="grid" style="stroke: black; stroke-width: 0.02; fill: none;"></g>
   <g id="zonelines" style="stroke: darkgoldenrod; stroke-width: 0.4; fill: none;"></g>
   <g id="zonetexts" style="fill: darkgoldenrod; font-size: 8"></g>
   <g id="orders" style="stroke-width: 0.4"></g>
@@ -62,6 +64,8 @@ const layerFocus = document.getElementById("focus");
 const layerFog = document.getElementById("fog");
 const layerGrid = document.getElementById("grid");
 const layerOrders = document.getElementById("orders");
+const layerPathing = document.getElementById("pathing");
+const layerPlacement = document.getElementById("placement");
 const layerShapes = document.getElementById("shapes");
 const layerUnits = document.getElementById("units");
 const layerMouse = document.getElementById("mouse");
@@ -89,6 +93,8 @@ function reset() {
   layerFog.replaceChildren();
   layerGrid.replaceChildren();
   layerOrders.replaceChildren();
+  layerPathing.replaceChildren();
+  layerPlacement.replaceChildren();
   layerShapes.replaceChildren();
   layerUnits.replaceChildren();
 }
@@ -112,11 +118,12 @@ function render(data) {
     const isFullView = (minx <= mapbox.minx) && (miny <= mapbox.miny) && (maxx >= mapbox.maxx) && (maxy >= mapbox.maxy);
 
     renderFocus(focus);
-    renderGrid(minx, maxx, miny, maxy);
 
+    if (grid) renderCells(layerPlacement, grid.placement, minx, maxx, miny, maxy, "#CCCCCC", 1.0);
+    if (grid) renderCells(layerPathing, grid.pathing, minx, maxx, miny, maxy, "#AAAAAA", 1.0);
+    if (data.creep) renderCells(layerCreep, data.creep, minx, maxx, miny, maxy, "purple", 0.5);
+    if (data.fog) renderCells(layerFog, data.fog, minx, maxx, miny, maxy, "black", 0.2, "invert");
     if (data.showZones) renderZones(isFullView);
-    if (data.creep) renderCreep(data.creep, minx, maxx, miny, maxy);
-    if (data.fog) renderFog(data.fog, minx, maxx, miny, maxy);
     if (data.spheres) renderShapes(data.spheres);
     if (data.units) renderUnits(data.units, isFullView, data.focus ? data.focus.tag : null);
     if (data.units) renderOrders(data.units, isFullView);
@@ -127,18 +134,17 @@ function render(data) {
   vscode.postMessage({ event: "ready" });
 }
 
-function renderCreep(creep, minx, maxx, miny, maxy) {
-  const svg = [];
+function renderGrid() {
+  const lines = [];
 
-  for (let x = minx; x < maxx; x++) {
-    for (let y = miny; y < maxy; y++) {
-      if (isCellOn(creep, x, y)) {
-        svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="purple" opacity="0.5" />`);
-      }
-    }
+  for (let x = 0; x < 250; x++) {
+    lines.push(`<line x1="${x}" y1="0" x2="${x}" y2="${250}" />`);
+  }
+  for (let y = 0; y < 250; y++) {
+    lines.push(`<line x1="0" y1="${y}" x2="${250}" y2="${y}" />`);
   }
 
-  layerCreep.innerHTML = svg.join("");
+  layerGrid.innerHTML = lines.join("");
 }
 
 function renderFocus(focus) {
@@ -150,36 +156,6 @@ function renderFocus(focus) {
 
     layerFocus.innerHTML = `<rect x="${x}" y="${y}" width="${width}" height="${height}" />`;
   }
-}
-
-function renderFog(fog, minx, maxx, miny, maxy) {
-  const svg = [];
-
-  for (let x = minx; x < maxx; x++) {
-    for (let y = miny; y < maxy; y++) {
-      if (!isCellOn(fog, x, y)) {
-        svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="black" opacity="0.2" />`);
-      }
-    }
-  }
-
-  layerFog.innerHTML = svg.join("");
-}
-
-function renderGrid(minx, maxx, miny, maxy) {
-  const svg = [];
-
-  for (let x = minx; x < maxx; x++) {
-    for (let y = miny; y < maxy; y++) {
-      if (isCellOn(grid.placement, x, y)) {
-        svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="#CCCCCC" />`);
-      } else if (isCellOn(grid.pathing, x, y)) {
-        svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="#AAAAAA" />`);
-      }
-    }
-  }
-
-  layerGrid.innerHTML = svg.join("");
 }
 
 function renderOrders(units, isFullView) {
@@ -268,23 +244,50 @@ function renderZones(isFullView) {
   }
 }
 
-function isCellOn(grid, x, y) {
-  if (!grid) return;
-  if ((x < 0) || (x > grid.size.x)) return;
-  if ((y < 0) || (y > grid.size.y)) return;
+function renderCells(layer, cells, minx, maxx, miny, maxy, color, opacity, invert) {
+  const svg = [];
 
-  const index = x + y * grid.size.x;
+  for (let y = miny; y <= maxy; y++) {
+    let startx = minx - 1;
 
-  switch (grid.bitsPerPixel) {
+    for (let x = minx; x <= maxx; x++) {
+      let on = isCellOn(cells, x, y);
+
+      if (invert) on = !on;
+
+      if (on) {
+        if (startx < minx) {
+          startx = x;
+        } else if (x === maxx) {
+          svg.push(`<rect x="${startx}" y=${y} width="${x - startx + 1}" height="1" fill="${color}" opacity="${opacity}" />`);
+        }
+      } else if (startx >= minx) {
+        svg.push(`<rect x="${startx}" y=${y} width="${x - startx}" height="1" fill="${color}" opacity="${opacity}" />`);
+        startx = minx - 1;
+      }
+    }
+  }
+
+  layer.innerHTML = svg.join("");
+}
+
+function isCellOn(cells, x, y) {
+  if (!cells) return;
+  if ((x < 0) || (x > cells.size.x)) return;
+  if ((y < 0) || (y > cells.size.y)) return;
+
+  const index = x + y * cells.size.x;
+
+  switch (cells.bitsPerPixel) {
     case 1: {
       const pos = 7 - index % 8;
       const mask = 1 << pos;
       const bit = Math.floor(index / 8);
 
-      return (grid.data[bit] & mask);
+      return (cells.data[bit] & mask);
     }
     case 8: {
-      return grid.data[index];
+      return cells.data[index];
     }
   }
 }
@@ -414,6 +417,7 @@ layerMouse.addEventListener("click", function(event) {
   }
 });
 
+renderGrid();
 map.setAttribute("width", window.innerWidth);
 map.setAttribute("height", window.innerHeight);
 
