@@ -33,6 +33,7 @@ jobs:
           tags: stephanzlatarev/starcraft:latest
 
   vscode:
+    needs: docker
     runs-on: ubuntu-latest
     steps:
       - name: Select release version
