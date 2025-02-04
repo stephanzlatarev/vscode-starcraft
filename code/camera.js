@@ -5,15 +5,19 @@ const minimap = require("./minimap.js");
 const timer = require("./timer.js");
 const units = require("./units.js");
 
-const SPAN_MIN = 9;
-const SPAN_MID = 35;
+const SPAN_MIN = 12;
+const SPAN_MID = 50;
 
 class Camera {
 
-  mapbox = { minx: 0, maxx: 0, miny: 300, maxy: 300, maxspan: 300 };
-  renderedViewBox = null;
+  focus = null;
+  mapbox = null;
+  viewbox = null;
 
-  tick = this.refresh.bind(this);
+  shouldRender = true;
+  shouldRerender = false;
+
+  tick = this.render.bind(this);
 
   async attach(container) {
     this.container = container;
@@ -26,7 +30,8 @@ class Camera {
     container.onDidDispose(this.detach.bind(this));
 
     container.webview.onDidReceiveMessage(function(message) {
-      if (message.type === "viewbox") this.viewbox = message.viewbox;
+      if (message.event === "ready") this.shouldRender = true;
+      if (message.event === "resize") this.resize(message.width, message.height);
       if (message.event === "scroll") this.move(message.x, message.y);
       if (message.event === "wheel") this.zoom(message.x, message.y, message.delta);
     }.bind(this));
@@ -43,110 +48,122 @@ class Camera {
     timer.remove(this.tick);
   }
 
-  move(x, y, span) {
-    if (!x || !y) return;
-    if (!this.mapbox) return;
-    if (!this.focus) this.focus = { x, y, span: span || SPAN_MID };
+  resize(width, height) {
+    this.shouldRerender = true;
+    this.width = width;
+    this.height = height;
 
-    span = span || this.focus.span;
+    if (this.focus && this.viewbox) {
+      this.shouldRerender = true;
+
+      this.focus.height = this.focus.width * height / width;
+
+      this.viewbox.height = this.viewbox.width * height / width;
+      this.viewbox.left = this.focus.x - this.viewbox.width / 2;
+      this.viewbox.top = this.focus.y - this.viewbox.height / 2;
+
+      minimap.setFocus(this.focus);
+    }
+  }
+
+  move(x, y) {
+    if (!x || !y) return;
+    if (!this.mapbox || !this.focus || !this.viewbox) return;
 
     if (x < this.mapbox.minx) x = this.mapbox.minx;
     if (x > this.mapbox.maxx) x = this.mapbox.maxx;
     if (y < this.mapbox.miny) y = this.mapbox.miny;
     if (y > this.mapbox.maxy) y = this.mapbox.maxy;
 
+    this.shouldRerender = true;
+
     this.focus.x = x;
     this.focus.y = y;
-    this.focus.span = span;
-    this.focus.tag = null;
 
-    post(this, { type: "viewbox", viewbox: this.focus });
+    this.viewbox.left = this.focus.x - this.viewbox.width / 2;
+    this.viewbox.top = this.focus.y - this.viewbox.height / 2;
 
-    minimap.onCameraMove(x, y, span);
+    minimap.setFocus(this.focus);
+
+    if (this.focus.tag) {
+      // If tagged unit is still on screen then continue following it
+      const unit = units.get(this.focus.tag);
+
+      if (!unit || !isOnCamera(unit.pos, this.viewbox)) {
+        this.focus.tag = null;
+      }
+    }
   }
 
   select(unit) {
-    let tag;
+    if (!this.focus) return;
 
     if (unit) {
-      tag = unit.tag;
-
       if (unit.pos) {
         this.move(unit.pos.x, unit.pos.y);
       } else {
         this.move(unit.x, unit.y);
       }
-    } else if (!this.focus) {
-      // Selection is possible only when camera is already set
-      return;
+
+      this.focus.tag = unit.tag;
     } else {
-      tag = null;
+      this.focus.tag = null;
     }
 
-    this.focus.tag = tag;
+    this.shouldRerender = true;
 
-    post(this, { type: "select", unit: tag });
-
-    details.onSelect(tag);
+    details.onSelect(this.focus.tag);
   }
 
   zoom(x, y, delta) {
-    if (!this.mapbox || !this.focus) return;
+    if (!this.mapbox || !this.focus || !this.viewbox) return;
+    if (!this.width || !this.height) return;
 
-    let tag = this.focus.tag;
-    let newspan = this.focus.span;
+    let span = this.focus.width;
 
-    newspan += newspan * 0.1 * Math.sign(delta);
+    span += span * 0.1 * Math.sign(delta);
 
-    if (newspan < SPAN_MIN) newspan = SPAN_MIN;
-    if (newspan > this.mapbox.maxspan) newspan = this.mapbox.maxspan;
+    if (span < SPAN_MIN) span = SPAN_MIN;
+    if (span > this.mapbox.maxspan) span = this.mapbox.maxspan;
 
-    const ratio = newspan / this.focus.span;
+    const ratio = span / this.focus.width;
     const slide = 1 - ratio;
     const newx = this.focus.x + (x - this.focus.x) * slide;
     const newy = this.focus.y + (y - this.focus.y) * slide;
 
-    this.move(newx, newy, newspan);
+    this.shouldRerender = true;
+    this.focus.width = span;
+    this.focus.height = span * this.height / this.width;
+    this.viewbox.width = this.focus.width;
+    this.viewbox.height = this.focus.height;
 
-    if (tag && this.viewbox) {
-      // If tagged unit is still on screen then continue following it
-      const unit = units.list().find(unit => (unit.tag === tag));
-
-      if (unit) {
-        const width = this.viewbox.width * ratio;
-        const height = this.viewbox.height * ratio;
-
-        if (isOnCamera(unit, { left: newx - width / 2, top: newy - height / 2, width, height })) {
-          this.focus.tag = tag;
-        }
-      }
-    }
+    this.move(newx, newy);
   }
 
   renew() {
+    this.shouldRender = true;
+
     // Clear cached data so that it's posted again
     this.gameInfo = null;
     this.observation = null;
     this.debugSpheres = null;
 
     if (this.container.visible) {
-      post(this, { type: "icons", path: files.getIconsPath(this.container.webview) });
-
-      // Recover the focus
-      if (this.focus) {
-        this.move(this.focus.x, this.focus.y, this.focus.span);
-      }
+      this.container.webview.postMessage({ type: "icons", path: files.getIconsPath(this.container.webview) });
     }
 
     timer.add(this.tick, 80);
   }
 
-  refresh() {
+  render() {
     if (!this.container || !this.container.visible) return;
+    if (!this.shouldRender) return;
 
     const gameInfo = game.get("gameInfo");
     const observation = game.get("observation");
     const debugSpheres = game.get("debugspheres");
+
+    let data;
 
     if (gameInfo && (gameInfo !== this.gameInfo)) {
       const { placementGrid, pathingGrid } = gameInfo.startRaw;
@@ -155,36 +172,34 @@ class Camera {
       this.gameInfo = gameInfo;
       this.mapbox = { minx: p0.x, maxx: p1.x, miny: p0.y, maxy: p1.y, maxspan: Math.max(p1.x - p0.x, p1.y - p0.y) * 2 };
 
-      post(this, { type: "mapbox", mapbox: this.mapbox });
-      post(this, { type: "grid", placement: placementGrid, pathing: pathingGrid });
+      if (!data) data = {};
+      data.mapbox = this.mapbox;
+      data.grid = { placement: placementGrid, pathing: pathingGrid };
     }
 
-    if (observation && ((observation !== this.observation) || (this.renderedViewBox !== this.viewbox))) {
+    if (observation && ((observation !== this.observation) || this.shouldRerender)) {
       const list = units.list(this.viewbox);
 
-      if (!this.focus) {
-        this.select(list.find(unit => ((unit.owner === 1) && (unit.r > 1))) || units.list().find(unit => ((unit.owner === 1) && (unit.r > 1))));
-      } else if (this.viewbox && this.focus.tag) {
-        const unit = list.find(unit => (unit.tag === this.focus.tag));
-
-        if (unit && !isOnCamera(unit, this.viewbox)) {
-          this.move(unit.x, unit.y);
-          this.focus.tag = unit.tag;
-        }
-      }
+      if (!data) data = {};
+      data.creep = observation.observation.rawData.mapState.creep;
+      data.fog = observation.observation.rawData.mapState.visibility;
+      data.units = list;
 
       this.observation = observation;
       this.renderedViewBox = this.viewbox;
-      
-      post(this, {
-        type: "units",
-        units: list,
-        fog: observation.observation.rawData.mapState.visibility,
-        creep: observation.observation.rawData.mapState.creep,
-      });
+
+      // Follow selected unit
+      if (this.viewbox && this.focus && this.focus.tag) {
+        const unit = units.get(this.focus.tag);
+
+        if (unit && !isOnCamera(unit.pos, this.viewbox)) {
+          this.move(unit.pos.x, unit.pos.y);
+          this.focus.tag = unit.tag;
+        }
+      }
     }
 
-    if (debugSpheres && (debugSpheres !== this.debugSpheres)) {
+    if (debugSpheres && ((debugSpheres !== this.debugSpheres) || this.shouldRerender)) {
       const spheres = [];
 
       for (const sphere of debugSpheres) {
@@ -193,9 +208,32 @@ class Camera {
         }
       }
 
-      this.container.webview.postMessage({ type: "debug", spheres });
+      if (spheres.length) data.spheres = spheres;
 
       this.debugSpheres = debugSpheres;
+    }
+
+    if (data) {
+      if ((!this.viewbox || !this.focus) && this.height && this.width && this.mapbox) {
+        const center = units.list().find(unit => ((unit.owner === 1) && (unit.r > 1)));
+
+        if (center) {
+          this.focus = { width: SPAN_MID, height: SPAN_MID * this.height / this.width };
+          this.viewbox = { width: this.focus.width, height: this.focus.height };
+          this.select(center);
+        }
+      }
+
+      data.focus = this.focus;
+      data.viewbox = this.viewbox;
+
+      this.shouldRender = false;
+      this.shouldRerender = false;
+
+      this.container.webview.postMessage({ type: "render", data });
+
+
+      return true;
     }
   }
 
@@ -207,12 +245,6 @@ function isOnCamera(unit, viewbox) {
 
 function debugColor(rgb) {
   return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
-}
-
-function post(controls, message) {
-  if (controls.container) {
-    controls.container.webview.postMessage(message);
-  }
 }
 
 module.exports = new Camera();

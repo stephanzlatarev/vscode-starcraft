@@ -19,10 +19,6 @@ class Timer {
   }
 
   stop() {
-    if (this.timeout) {
-      clearTimeout(this.timeout);
-    }
-
     this.isRunning = false;
   }
 }

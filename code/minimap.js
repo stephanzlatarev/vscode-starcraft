@@ -5,7 +5,7 @@ const units = require("./units.js");
 
 class MiniMap {
 
-  tick = this.refresh.bind(this);
+  tick = this.render.bind(this);
 
   async attach(container) {
     this.container = container;
@@ -27,12 +27,6 @@ class MiniMap {
     timer.remove(this.tick);
   }
 
-  onCameraMove(x, y, span) {
-    if (this.container) {
-      this.container.webview.postMessage({ type: "focus", x, y, span });
-    }
-  }
-
   renew() {
     // Clear cached data so that it's posted again
     this.gameInfo = null;
@@ -42,51 +36,55 @@ class MiniMap {
     timer.add(this.tick, 1000);
   }
 
-  refresh() {
+  setFocus(focus) {
+    this.focus = focus;
+
+    if (this.container && this.container.visible) {
+      this.container.webview.postMessage({ type: "focus", focus });
+    }
+  }
+
+  render() {
     if (!this.container || !this.container.visible) return;
     
     const gameInfo = game.get("gameInfo");
     const observation = game.get("observation");
     const debugSpheres = game.get("debugspheres");
 
-    // The minimap refreshes rarely. Telling the timer nothing changed allows it to attempt a refresh sooner
-    let isChanged = false;
+    const data = { showZones: true, focus: this.focus };
 
     if (gameInfo && (gameInfo !== this.gameInfo)) {
       const { p0, p1 } = gameInfo.startRaw.playableArea;
       const { placementGrid, pathingGrid } = gameInfo.startRaw;
-      const box = { left: p0.x, top: p0.y, width: p1.x - p0.x, height: p1.y - p0.y };
-      const mapbox = { minx: p0.x, maxx: p1.x, miny: p0.y, maxy: p1.y };
 
       this.container.title = gameInfo.mapName;
-      this.container.webview.postMessage({ type: "mapbox", mapbox });
-      this.container.webview.postMessage({ type: "viewbox", viewbox: box });
-      this.container.webview.postMessage({ type: "grid", placement: placementGrid, pathing: pathingGrid });
+
+      data.viewbox = { left: p0.x, top: p0.y, width: p1.x - p0.x, height: p1.y - p0.y };
+      data.mapbox = { minx: p0.x, maxx: p1.x, miny: p0.y, maxy: p1.y };
+      data.grid = { placement: placementGrid, pathing: pathingGrid };
 
       this.gameInfo = gameInfo;
-      isChanged = true;
     }
 
     if (observation && (observation !== this.observation)) {
-      this.container.webview.postMessage({
-        type: "units",
-        units: units.list(),
-        fog: observation.observation.rawData.mapState.visibility,
-        creep: observation.observation.rawData.mapState.creep,
-      });
+      data.units = units.list();
+      data.creep = observation.observation.rawData.mapState.creep;
+      data.fog = observation.observation.rawData.mapState.visibility;
 
       this.observation = observation;
-      isChanged = true;
     }
 
     if (debugSpheres && (debugSpheres !== this.debugSpheres)) {
-      this.container.webview.postMessage({ type: "debug", spheres: debugSpheres.map(one => ({ x: one.p.x, y: one.p.y, r: one.r, color: debugColor(one.color) })) });
+      data.spheres = debugSpheres.map(one => ({ x: one.p.x, y: one.p.y, r: one.r, color: debugColor(one.color) }));
 
       this.debugSpheres = debugSpheres;
-      isChanged = true;
     }
 
-    return isChanged;
+    if (data.viewbox || data.units || data.spheres) {
+      this.container.webview.postMessage({ type: "render", data });
+
+      return true;
+    }
   }
 
 }

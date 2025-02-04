@@ -16,10 +16,10 @@ html, body {
   overflow: auto;
   background-color: transparent;
 }
-.building {
+.rect {
   clip-path: inset(0 0 0 0 round 10%);
 }
-.unit {
+.circle {
   clip-path: inset(0 0 0 0 round 50%);
 }
 .select {
@@ -41,104 +41,209 @@ html, body {
   <rect x="-1000" y="-1000" width="2000" height="2000" fill="black" />
   <g id="grid" style="stroke: none"></g>
   <g id="creep"></g>
-  <g id="debug" opacity="0.2"></g>
+  <g id="shapes" opacity="0.2"></g>
   <g id="zonelines" style="stroke: darkgoldenrod; stroke-width: 0.4; fill: none;"></g>
   <g id="zonetexts" style="fill: darkgoldenrod; font-size: 8"></g>
+  <g id="orders" style="stroke-width: 0.4"></g>
   <g id="units"></g>
   <g id="fog"></g>
-  <g id="focus" style="stroke: gold; stroke-width: 0.4; fill: none"></g>
+  <g id="focus" style="stroke: gold; stroke-width: 0.8; fill: none"></g>
 </svg>
 <div id="mouse" />
 </body>
 
 <script>
-const ZOOM_ICONS_THRESHOLD = 100;
 const OWNER_COLOR = ["white", "blue", "red"];
 const ZONE_COLS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
 const map = document.getElementById("map");
 const layerCreep = document.getElementById("creep");
-const layerDebug = document.getElementById("debug");
 const layerFocus = document.getElementById("focus");
 const layerFog = document.getElementById("fog");
 const layerGrid = document.getElementById("grid");
+const layerOrders = document.getElementById("orders");
+const layerShapes = document.getElementById("shapes");
 const layerUnits = document.getElementById("units");
 const layerMouse = document.getElementById("mouse");
 const vscode = acquireVsCodeApi();
 
-let viewbox = { left: 0, top: 0, width: 0, height: 0 };
-let mapbox;
-let camera = null;
-let iconspath = null;
+let focus = null;
 let grid = null;
+let iconspath = null;
+let mapbox = null;
+let viewbox = null;
+
 let lastKeyCode = null;
 let lastKeyDown = false;
 let lastKeyHold = false;
-let selection = null;
+
+function reset() {
+  focus = null;
+  grid = null;
+  viewbox = null;
+
+  map.setAttribute("viewBox", "0 0 0 0");
+
+  layerCreep.replaceChildren();
+  layerFocus.replaceChildren();
+  layerFog.replaceChildren();
+  layerGrid.replaceChildren();
+  layerOrders.replaceChildren();
+  layerShapes.replaceChildren();
+  layerUnits.replaceChildren();
+}
 
 function setIconsPath(path) {
   iconspath = path;
 }
 
-function resetCamera() {
-  viewbox = { left: 0, top: 0, width: 0, height: 0 };
-  grid = null;
-  selection = null;
+function render(data) {
+  // Remember focus, grid, mapbox and viewbox because they don't come every time
+  if (data.focus) focus = data.focus;
+  if (data.grid) grid = data.grid;
+  if (data.mapbox) mapbox = data.mapbox;
+  if (data.viewbox) viewbox = data.viewbox;
 
-  map.setAttribute("viewBox", "0 0 0 0");
-  layerCreep.replaceChildren();
-  layerDebug.replaceChildren();
-  layerFocus.replaceChildren();
-  layerFog.replaceChildren();
-  layerGrid.replaceChildren();
-  layerUnits.replaceChildren();
-}
-
-function setViewBox(box) {
-  if ((box === viewbox) || ((box.left === viewbox.left) && (box.top === viewbox.top) && (box.width === viewbox.width) && (box.height === viewbox.height))) {
-    // Viewbox doesn't change
-  } else if ((box.x >= 0) && (box.y >= 0)) {
-    const width = window.innerWidth * box.span / 1000;
-    const height = width * window.innerHeight / window.innerWidth;
-
-    viewbox = {
-      left: box.x - width / 2,
-      top: box.y - height / 2,
-      width: width,
-      height: height,
-    };
-
-    camera = { ...box };
-  } else {
-    viewbox = { ...box };
-    camera = null;
-  }
-
-  if (mapbox && grid) {
+  if (viewbox) {
     const minx = Math.floor(Math.max(mapbox.minx, viewbox.left));
     const maxx = Math.ceil(Math.min(mapbox.maxx, viewbox.left + viewbox.width));
     const miny = Math.floor(Math.max(mapbox.miny, viewbox.top));
     const maxy = Math.ceil(Math.min(mapbox.maxy, viewbox.top + viewbox.height));
+    const isFullView = (minx <= mapbox.minx) && (miny <= mapbox.miny) && (maxx >= mapbox.maxx) && (maxy >= mapbox.maxy);
+
+    renderFocus(focus);
+    renderGrid(minx, maxx, miny, maxy);
+
+    if (data.showZones) renderZones(isFullView);
+    if (data.creep) renderCreep(data.creep, minx, maxx, miny, maxy);
+    if (data.fog) renderFog(data.fog, minx, maxx, miny, maxy);
+    if (data.spheres) renderShapes(data.spheres);
+    if (data.units) renderUnits(data.units, isFullView, data.focus ? data.focus.tag : null);
+    if (data.units) renderOrders(data.units, isFullView);
+
+    map.setAttribute("viewBox", [viewbox.left, viewbox.top, viewbox.width, viewbox.height].join(" "));
+  }
+
+  vscode.postMessage({ event: "ready" });
+}
+
+function renderCreep(creep, minx, maxx, miny, maxy) {
+  const svg = [];
+
+  for (let x = minx; x < maxx; x++) {
+    for (let y = miny; y < maxy; y++) {
+      if (isCellOn(creep, x, y)) {
+        svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="purple" opacity="0.5" />`);
+      }
+    }
+  }
+
+  layerCreep.innerHTML = svg.join("");
+}
+
+function renderFocus(focus) {
+  if (focus && focus.width && focus.height) {
+    const x = focus.x - focus.width / 2 - 1;
+    const y = focus.y - focus.height / 2 - 1;
+    const width = focus.width + 2;
+    const height = focus.height + 2;
+
+    layerFocus.innerHTML = `<rect x="${x}" y="${y}" width="${width}" height="${height}" />`;
+  }
+}
+
+function renderFog(fog, minx, maxx, miny, maxy) {
+  const svg = [];
+
+  for (let x = minx; x < maxx; x++) {
+    for (let y = miny; y < maxy; y++) {
+      if (!isCellOn(fog, x, y)) {
+        svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="black" opacity="0.2" />`);
+      }
+    }
+  }
+
+  layerFog.innerHTML = svg.join("");
+}
+
+function renderGrid(minx, maxx, miny, maxy) {
+  const svg = [];
+
+  for (let x = minx; x < maxx; x++) {
+    for (let y = miny; y < maxy; y++) {
+      if (isCellOn(grid.placement, x, y)) {
+        svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="#CCCCCC" />`);
+      } else if (isCellOn(grid.pathing, x, y)) {
+        svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="#AAAAAA" />`);
+      }
+    }
+  }
+
+  layerGrid.innerHTML = svg.join("");
+}
+
+function renderOrders(units, isFullView) {
+  if (isFullView) {
+    layerOrders.innerHTML = "";
+  } else {
     const svg = [];
 
-    for (let x = minx; x < maxx; x++) {
-      for (let y = miny; y < maxy; y++) {
-        if (isCellOn(grid.placement, x, y)) {
-          svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="#CCCCCC" />`);
-        } else if (isCellOn(grid.pathing, x, y)) {
-          svg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="#AAAAAA" />`);
-        }
+    for (const unit of units) {
+      if (unit.order && unit.order.x && unit.order.y) {
+        const color = OWNER_COLOR[unit.owner] || "white";
+
+        const order = unit.order;
+        const distance = Math.abs(unit.x - order.x) + Math.abs(unit.y - order.y);
+        const opacity = Math.max(1 - distance / 50, 0.1);
+        svg.push(`<line x1="${unit.x}" y1="${unit.y}" x2="${order.x}" y2="${order.y}" stroke="${color}" stroke-width="0.4" stroke-opacity="${opacity}" />`);
       }
     }
 
-    layerGrid.innerHTML = svg.join("");
+    layerOrders.innerHTML = svg.join("");
+  }
+}
+
+function renderShapes(spheres) {
+  const svg = [];
+
+  for (const sphere of spheres) {
+    svg.push(`<circle cx="${sphere.x}" cy=${sphere.y} r="${sphere.r}" fill="${sphere.color}" />`);
   }
 
-  if (
-    mapbox &&
-    (viewbox.left === mapbox.minx) && (viewbox.top === mapbox.miny) &&
-    (viewbox.left + viewbox.width === mapbox.maxx) && (viewbox.top + viewbox.height === mapbox.maxy)
-  ) {
+  layerShapes.innerHTML = svg.join("");
+}
+
+function renderUnits(units, isFullView, selectedUnitTag) {
+  const svg = [];
+
+  if (!isFullView) {
+    for (const unit of units) {
+      const color = OWNER_COLOR[unit.owner] || "white";
+
+      if (unit.order) {
+        const order = unit.order;
+        const distance = Math.abs(unit.x - order.x) + Math.abs(unit.y - order.y);
+        const opacity = Math.max(1 - distance / 50, 0.1);
+        svg.push(`<line x1="${unit.x}" y1="${unit.y}" x2="${order.x}" y2="${order.y}" stroke="${color}" stroke-width="0.4" stroke-opacity="${opacity}" />`);
+      }
+    }
+  }
+
+  for (const unit of units) {
+    const color = OWNER_COLOR[unit.owner] || "white";
+
+    if (isFullView) {
+      renderLowDefinitionUnitRendering(svg, unit, color);
+    } else {
+      getHighDefinitionUnitRendering(svg, unit, color, (unit.tag === selectedUnitTag));
+    }
+  }
+
+  layerUnits.innerHTML = svg.join("");
+}
+
+function renderZones(isFullView) {
+  if (isFullView) {
     const lines = [];
     const texts = [];
     const stepx = viewbox.width / 10;
@@ -160,153 +265,6 @@ function setViewBox(box) {
   } else {
     document.getElementById("zonelines").innerHTML = "";
     document.getElementById("zonetexts").innerHTML = "";
-  }
-
-  map.setAttribute("viewBox", [viewbox.left, viewbox.top, viewbox.width, viewbox.height].join(" "));
-
-  vscode.postMessage({ type: "viewbox", viewbox });
-}
-
-function setFocus(x, y, span) {
-  layerFocus.innerHTML = `<rect x="${x - span / 2}" y=${y - span / 2} width="${span}" height="${span}" />`;
-}
-
-function setGrid(placement, pathing) {
-  grid = { placement, pathing };
-
-  setViewBox(viewbox);
-}
-
-function setDebug(spheres) {
-  const svg = [];
-
-  for (const sphere of spheres) {
-    svg.push(`<circle cx="${sphere.x}" cy=${sphere.y} r="${sphere.r}" fill="${sphere.color}" />`);
-  }
-
-  layerDebug.innerHTML = svg.join("");
-}
-
-function setUnits(units, fog, creep) {
-  const svg = [];
-
-  if (viewbox.width < ZOOM_ICONS_THRESHOLD) {
-    for (const unit of units) {
-      const color = OWNER_COLOR[unit.owner] || "white";
-
-      if (unit.order) {
-        const order = unit.order;
-        const distance = Math.abs(unit.x - order.x) + Math.abs(unit.y - order.y);
-        const opacity = Math.max(1 - distance / 50, 0.1);
-        svg.push(`<line x1="${unit.x}" y1="${unit.y}" x2="${order.x}" y2="${order.y}" stroke="${color}" stroke-width="0.4" stroke-opacity="${opacity}" />`);
-      }
-    }
-  }
-
-  for (const unit of units) {
-    const color = OWNER_COLOR[unit.owner] || "white";
-
-    if (viewbox.width < ZOOM_ICONS_THRESHOLD) {
-      if (unit.type) {
-        let c = "building";
-        let x, y, width, height;
-
-        if (unit.type.kind === 2) {
-          // Mineral field
-          x = unit.x - 1;
-          y = unit.y - 0.5;
-          width = 2;
-          height = 1;
-        } else if (unit.type.kind === 3) {
-          // Vespene geyser
-          x = unit.x - 1.5;
-          y = unit.y - 1.5;
-          width = 3;
-          height = 3;
-        } else if ((unit.owner !== 1) && (unit.owner !== 2)) {
-          // Obstacle
-          x = unit.x - 0.5;
-          y = unit.y - 0.5;
-          width = 1;
-          height = 1;
-        } else if (unit.type.kind === 1) {
-          // Player's building
-          const size = Math.floor(unit.r + unit.r);
-          const radius = size / 2;
-
-          x = unit.x - radius;
-          y = unit.y - radius;
-          width = size;
-          height = size;
-        } else {
-          // Player's unit
-          c = "unit";
-          x = unit.x - unit.r;
-          y = unit.y - unit.r;
-          width = unit.r + unit.r;
-          height = unit.r + unit.r;
-        }
-
-        const wip = unit.wip ? "wip" : "";
-        const cloak = unit.cloak ? "cloak" : "";
-        const select = (unit.tag === selection) ? "select" : "";
-
-        svg.push(`<rect class="${c} ${select} ${wip} ${cloak}" x="${x}" y="${y}" width="${width}" height="${height}" fill="${color}" />`);
-
-        if (iconspath && unit.type.alias) {
-          const href = iconspath + unit.type.alias + ".webp";
-          const onerror = `onerror="this.style.display='none'"`;
-
-          svg.push(`<image class="${c} ${wip} ${cloak}" x="${x}" y="${y}" width="${width * 0.95}" height="${height * 0.95}" href="${href}" ${onerror} />`);
-        }
-
-        if (unit.progress < 1) {
-          svg.push(`<rect class="${c}" x="${x}" y="${y}" width="${width * 0.95}" height="${height * 0.95 * (1 - unit.progress)}" fill="#555555" opacity="0.8" />`);
-        }
-
-        if (iconspath && unit.product) {
-          const href = iconspath + unit.product.type + ".webp";
-          const onerror = `onerror="this.style.display='none'"`;
-
-          svg.push(`<image x="${x + 0.2}" y="${y + 0.2}" width="1" height="1" href="${href}" ${onerror} />`);
-          svg.push(`<rect x="${x + 0.2}" y="${y + 0.2}" width="1" height="${1 - unit.product.progress}" fill="#555555" opacity="0.8" />`);
-        }
-      } else {
-        svg.push(`<circle cx="${unit.x}" cy="${unit.y}" r="${unit.r - 0.1}" stroke="${color}" stroke-width="0.2" fill="black" />`);
-      }
-    } else {
-      if (unit.type && (unit.owner !== 1) && (unit.owner !== 2) && (unit.type.kind !== 2) && (unit.type.kind !== 3)) {
-        // This is some kind of obstacle with unclear dimensions
-        svg.push(`<circle cx="${unit.x}" cy="${unit.y}" r="0.5" stroke="none" fill="${color}" />`);
-      } else {
-        svg.push(`<circle cx="${unit.x}" cy="${unit.y}" r="${Math.max(unit.r, 1)}" stroke="none" fill="${color}" />`);
-      }
-    }
-  }
-
-  layerUnits.innerHTML = svg.join("");
-
-  if (mapbox && (fog || creep)) {
-    const minx = Math.floor(Math.max(mapbox.minx, viewbox.left));
-    const maxx = Math.ceil(Math.min(mapbox.maxx, viewbox.left + viewbox.width));
-    const miny = Math.floor(Math.max(mapbox.miny, viewbox.top));
-    const maxy = Math.ceil(Math.min(mapbox.maxy, viewbox.top + viewbox.height));
-    const creepsvg = [];
-    const fogsvg = [];
-
-    for (let x = minx; x < maxx; x++) {
-      for (let y = miny; y < maxy; y++) {
-        if (isCellOn(creep, x, y)) {
-          creepsvg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="purple" opacity="0.5" />`);
-        }
-        if (!isCellOn(fog, x, y)) {
-          fogsvg.push(`<rect x="${x + 0.01}" y=${y + 0.01} width="${0.98}" height="${0.98}" fill="black" opacity="0.2" />`);
-        }
-      }
-    }
-
-    layerCreep.innerHTML = creepsvg.join("");
-    layerFog.innerHTML = fogsvg.join("");
   }
 }
 
@@ -331,24 +289,73 @@ function isCellOn(grid, x, y) {
   }
 }
 
+function getUnitDimensions(unit) {
+  if (unit.type.kind === 2) {
+    // Mineral field
+    return { x: unit.x - 1, y: unit.y - 0.5, width: 2, height: 1, shape: "rect" };
+  } else if (unit.type.kind === 3) {
+    // Vespene geyser
+    return { x: unit.x - 1.5, y: unit.y - 1.5, width: 3, height: 3, shape: "rect" };
+  } else if ((unit.owner !== 1) && (unit.owner !== 2)) {
+    // Obstacle
+    return { x: unit.x - 0.5, y: unit.y - 0.5, width: 1, height: 1, shape: "rect" };
+  } else if (unit.type.kind === 1) {
+    // Building
+    const size = Math.floor(unit.r + unit.r);
+    const radius = size / 2;
+
+    return { x: unit.x - radius, y: unit.y - radius, width: size, height: size, shape: "rect" };
+  } else {
+    // Unit
+    return { x: unit.x - unit.r, y: unit.y - unit.r, width: unit.r + unit.r, height: unit.r + unit.r, shape: "circle" };
+  }
+}
+
+function renderLowDefinitionUnitRendering(svg, unit, color) {
+  const { x, y, width, height } = getUnitDimensions(unit);
+
+  svg.push(`<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${color}" />`);
+}
+
+function getHighDefinitionUnitRendering(svg, unit, color, isSelected) {
+  const { x, y, width, height, shape } = getUnitDimensions(unit);
+  const wip = unit.wip ? "wip" : "";
+  const cloak = unit.cloak ? "cloak" : "";
+  const select = isSelected ? "select" : "";
+
+  svg.push(`<rect class="${shape} ${select} ${wip} ${cloak}" x="${x}" y="${y}" width="${width}" height="${height}" fill="${color}" />`);
+
+  if (iconspath && unit.type.alias) {
+    const href = iconspath + unit.type.alias + ".webp";
+
+    svg.push(`<image class="${shape} ${wip} ${cloak}" x="${x}" y="${y}" width="${width * 0.95}" height="${height * 0.95}" href="${href}" />`);
+  }
+
+  if (unit.progress < 1) {
+    svg.push(`<rect class="${shape}" x="${x}" y="${y}" width="${width * 0.95}" height="${height * 0.95 * (1 - unit.progress)}" fill="#555555" opacity="0.8" />`);
+  }
+
+  if (iconspath && unit.product && unit.product.type.alias) {
+    const href = iconspath + unit.product.type.alias + ".webp";
+
+    svg.push(`<image x="${x + 0.2}" y="${y + 0.2}" width="1" height="1" href="${href}" />`);
+    svg.push(`<rect x="${x + 0.2}" y="${y + 0.2}" width="1" height="${1 - unit.product.progress}" fill="#555555" opacity="0.8" />`);
+  }
+}
+
 window.addEventListener("resize", function(event) {
   map.setAttribute("width", window.innerWidth);
   map.setAttribute("height", window.innerHeight);
 
-  if (camera) setViewBox(camera);
+  vscode.postMessage({ event: "resize", width: window.innerWidth, height: window.innerHeight });
 }, true);
 
 window.addEventListener("message", function({ data }) {
   switch (data.type) {
-    case "debug": return setDebug(data.spheres);
-    case "focus": return setFocus(data.x, data.y, data.span);
+    case "focus": return renderFocus(data.focus);
     case "icons": return setIconsPath(data.path);
-    case "grid": return setGrid(data.placement, data.pathing);
-    case "mapbox": return mapbox = data.mapbox;
-    case "reset": return resetCamera();
-    case "select": return (selection = data.unit);
-    case "units": return setUnits(data.units, data.fog, data.creep);
-    case "viewbox": return setViewBox(data.viewbox);
+    case "render": return render(data.data);
+    case "reset": return reset();
   }
 });
 
@@ -357,57 +364,60 @@ window.addEventListener("keydown", function(event) {
   const isHold = lastKeyDown && (event.code === lastKeyCode);
   if (event.code === "Space") {
     vscode.postMessage({ event: "pause" });
-  } else if (camera && isHold && IS_ARROW_KEY[event.code]) {
-    moveCamera(event.code, 1);
+  } else if (isHold && IS_ARROW_KEY[event.code]) {
+    scroll(event.code, 1);
   }
   lastKeyCode = event.code;
   lastKeyDown = true;
   lastKeyHold = isHold;
 });
 window.addEventListener("keyup", function(event) {
-  if (camera && lastKeyDown && !lastKeyHold && (event.code === lastKeyCode) && IS_ARROW_KEY[event.code]) {
-    moveCamera(event.code, 12);
+  if (lastKeyDown && !lastKeyHold && (event.code === lastKeyCode) && IS_ARROW_KEY[event.code]) {
+    scroll(event.code, 12);
   }
   lastKeyCode = event.code;
   lastKeyDown = false;
   lastKeyHold = false;
 });
-function moveCamera(arrow, step) {
-  let x = camera.x;
-  let y = camera.y;
-
-  if (arrow === "ArrowLeft") {
-    x -= step;
+function scroll(arrow, step) {
+  if (!focus) {
+    // Can't scroll without focus
+  } else if (arrow === "ArrowLeft") {
+    vscode.postMessage({ event: "scroll", x: focus.x - step, y: focus.y });
   } else if (arrow === "ArrowUp") {
-    y -= step;
+    vscode.postMessage({ event: "scroll", x: focus.x, y: focus.y - step });
   } else if (arrow === "ArrowRight") {
-    x += step;
+    vscode.postMessage({ event: "scroll", x: focus.x + step, y: focus.y });
   } else if (arrow === "ArrowDown") {
-    y += step;
+    vscode.postMessage({ event: "scroll", x: focus.x, y: focus.y + step });
   }
-
-  vscode.postMessage({ event: "scroll", x, y });
 }
 
 window.addEventListener("wheel", function(event) {
-  vscode.postMessage({
-    event: "wheel",
-    delta: event.deltaY,
-    x: Math.round(viewbox.left + event.offsetX * viewbox.width / window.innerWidth),
-    y: Math.round(viewbox.top + event.offsetY * viewbox.height / window.innerHeight),
-  });
+  if (viewbox) {
+    vscode.postMessage({
+      event: "wheel",
+      delta: event.deltaY,
+      x: viewbox.left + event.offsetX * viewbox.width / window.innerWidth,
+      y: viewbox.top + event.offsetY * viewbox.height / window.innerHeight,
+    });
+  }
 });
 
 layerMouse.addEventListener("click", function(event) {
-  vscode.postMessage({
-    event: "click",
-    x: viewbox.left + event.offsetX * viewbox.width / window.innerWidth,
-    y: viewbox.top + event.offsetY * viewbox.height / window.innerHeight,
-  });
+  if (viewbox) {
+    vscode.postMessage({
+      event: "click",
+      x: viewbox.left + event.offsetX * viewbox.width / window.innerWidth,
+      y: viewbox.top + event.offsetY * viewbox.height / window.innerHeight,
+    });
+  }
 });
 
 map.setAttribute("width", window.innerWidth);
 map.setAttribute("height", window.innerHeight);
+
+vscode.postMessage({ event: "resize", width: window.innerWidth, height: window.innerHeight });
 </script>
 
 </html>
