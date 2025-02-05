@@ -111,8 +111,6 @@ function displayUnit(emitter, unit) {
   object(lines, TAB, ["Type:"], Types.info(unit.unitType));
 
   emitter.fire(lines.map(line => line.join(" ")).join("\r\n"));
-
-  return lines.length;
 }
 
 function clearScreen(emitter) {
