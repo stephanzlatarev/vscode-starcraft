@@ -82,6 +82,28 @@ function displayUnit(emitter, unit) {
   bar(lines, "Shield:", unit.shield, unit.shieldMax, "135;206;235");
   bar(lines, "Energy:", unit.energy, unit.energyMax, "102;51;153");
 
+  if (unit.orders.length) {
+    const order = unit.orders[0];
+  
+    let target = "";
+  
+    if (order.targetWorldSpacePos) {
+      target = Math.floor(order.targetWorldSpacePos.x) + ":" + Math.floor(order.targetWorldSpacePos.y);
+    } else if (order.targetUnitTag) {
+      const targetUnit = units.get(order.targetUnitTag);
+  
+      if (targetUnit) {
+        target = Types.unit(targetUnit.unitType).name + " " + targetUnit.tag;
+      } else {
+        target = order.targetUnitTag;
+      }
+    }
+
+    lines.push([]);
+    lines.push(["Order:", Types.product(order.abilityId) || Types.ability(order.abilityId), target]);
+    bar(lines, "       ", order.progress, 1.0, "255;215;0");
+  }
+
   lines.push([]);
   object(lines, TAB, ["Unit:"], unit);
 
@@ -98,7 +120,7 @@ function clearScreen(emitter) {
 }
 
 function bar(lines, key, value, max, color) {
-  if (max) {
+  if (value && max) {
     const progress = Math.round(value * 10 / max);
     const progressbar = [];
 
