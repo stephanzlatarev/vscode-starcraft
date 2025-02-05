@@ -37,12 +37,6 @@ function activate(context) {
     },
   }));
 
-  context.subscriptions.push(vscode.window.registerWebviewViewProvider("starcraft.details", {
-    resolveWebviewView(view) {
-      details.attach(view);
-    }
-  }));
-
   context.subscriptions.push(vscode.window.registerWebviewViewProvider("starcraft.actions", {
     resolveWebviewView(view) {
       actions.attach(view);
@@ -81,6 +75,7 @@ async function start(container, document) {
 
       activeContainer = null;
       game.reset();
+      details.stop();
     }
   });
 
@@ -121,6 +116,7 @@ async function start(container, document) {
 
   camera.attach(container);
   controls.setConfig(document ? { mouse: false } : { skip: false });
+  details.start();
   
   container.webview.onDidReceiveMessage(function(message) {
     if (message.event === "click") {
@@ -135,6 +131,7 @@ function deactivate() {
   activeContainer = false;
   timer.stop();
   game.stop();
+  details.stop();
 
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);
 }

@@ -33,12 +33,6 @@
     "views": {
       "explorer": [
         {
-          "id": "starcraft.details",
-          "type": "webview",
-          "name": "Unit details",
-          "when": "starcraft.isInGame"
-        },
-        {
           "id": "starcraft.actions",
           "type": "webview",
           "name": "Step actions",

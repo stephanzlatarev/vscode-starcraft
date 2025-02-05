@@ -7,11 +7,16 @@ class Types {
   static KIND_VESPENE_GEYSER = 3;
 
   abilities = new Map();
+  infos = new Map();
   products = new Map();
   units = new Map();
 
   ability(id) {
     return this.abilities.get(id) || "";
+  }
+
+  info(id) {
+    return this.infos.get(id) || {};
   }
 
   product(id) {
@@ -48,6 +53,7 @@ class Types {
             alias: alias,
           };
 
+          this.infos.set(unit.unitId, unit);
           this.units.set(unit.unitId, type);
         }
       }
