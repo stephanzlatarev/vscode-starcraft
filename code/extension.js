@@ -2,6 +2,7 @@ const vscode = require("vscode");
 const actions = require("./actions.js");
 const camera = require("./camera.js");
 const controls = require("./controls.js");
+const debug = require("./debug.js");
 const details = require("./details.js");
 const docker = require("./docker.js");
 const files = require("./files.js");
@@ -75,6 +76,7 @@ async function start(container, document) {
 
       activeContainer = null;
       game.reset();
+      debug.stop();
       details.stop();
     }
   });
@@ -116,6 +118,7 @@ async function start(container, document) {
 
   camera.attach(container);
   controls.setConfig(document ? { mouse: false } : { skip: false });
+  debug.start();
   details.start();
   
   container.webview.onDidReceiveMessage(function(message) {
@@ -131,6 +134,7 @@ function deactivate() {
   activeContainer = false;
   timer.stop();
   game.stop();
+  debug.stop();
   details.stop();
 
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);
