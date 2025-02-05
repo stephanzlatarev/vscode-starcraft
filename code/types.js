@@ -35,8 +35,8 @@ class Types {
         if (ability.available && ability.linkName) {
           this.abilities.set(ability.abilityId, ability.linkName);
         }
-        if (ability.available && ability.buttonName) {
-          this.products.set(ability.abilityId, ability.buttonName);
+        if (ability.available && ability.buttonName && ALIASES[ability.buttonName]) {
+          this.products.set(ability.abilityId, ALIASES[ability.buttonName]);
         }
       }
     }

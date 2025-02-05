@@ -338,8 +338,8 @@ function getHighDefinitionUnitRendering(svg, unit, color, isSelected) {
     svg.push(`<rect class="${shape}" x="${x}" y="${y}" width="${width * 0.95}" height="${height * 0.95 * (1 - unit.progress)}" fill="#555555" opacity="0.8" />`);
   }
 
-  if (iconspath && unit.product && unit.product.type.alias) {
-    const href = iconspath + unit.product.type.alias + ".webp";
+  if (iconspath && unit.product) {
+    const href = iconspath + unit.product.type + ".webp";
 
     svg.push(`<image x="${x + 0.2}" y="${y + 0.2}" width="1" height="1" href="${href}" />`);
     svg.push(`<rect x="${x + 0.2}" y="${y + 0.2}" width="1" height="${1 - unit.product.progress}" fill="#555555" opacity="0.8" />`);
