@@ -117,7 +117,7 @@ async function start(container, document) {
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", true);
 
   camera.attach(container);
-  controls.setConfig(document ? { mouse: false } : { skip: false });
+  controls.reset(document ? { mouse: false } : { skip: false }, { mode: "select" });
   debug.start();
   details.start();
   

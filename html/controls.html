@@ -46,37 +46,38 @@
 </body>
 
 <script>
+const COMMANDS = ["back", "forth", "pause", "resume", "skip"];
 const LOOPS_PER_SECOND = 22.4;
 const LOOPS_PER_MINUTE = LOOPS_PER_SECOND * 60;
 
 const vscode = acquireVsCodeApi();
 const actionSpawnTypes = document.getElementById("action-spawn-types");
+let action = {};
 let config = {};
 let types = [];
-let action = { mode: "select" };
-let isStarted;
 
-const commands = {
-  back: () => {},
-  forth: () => {},
-  pause: () => showControls({ pause: false, skip: false }),
-  resume: () => showControls({ back: false, forth: false, resume: false }),
-  skip: () => {},
-};
+function setControls(c, a) {
+  config = c;
+  action = a;
 
-function showControls(state) {
-  for (const id in commands) {
-    document.getElementById(id).style.display = ((config[id] === false) || (state[id] === false)) ? "none" : "block";
+  for (const command of COMMANDS) {
+    document.getElementById(command).style.display = ((config[command] === false) || (controls[command] === false)) ? "none" : "block";
   }
-}
 
-function setConfig(data) {
-  config = data;
+  if ((config.mouse === false) || (action.mode === "select")) {
+    document.getElementById("action-kill").style.display = "none";
+    document.getElementById("action-select").style.display = "inline";
+    document.getElementById("action-spawn").style.display = "none";
+  } else if (action.mode === "spawn") {
+    actionSpawnTypes.value = String(action.type);
 
-  showControls({});
-
-  for (const id in commands) {
-    if (config[id] !== false) commands[id]();
+    document.getElementById("action-kill").style.display = "none";
+    document.getElementById("action-select").style.display = "none";
+    document.getElementById("action-spawn").style.display = "inline";
+  } else if (action.mode === "kill") {
+    document.getElementById("action-kill").style.display = "inline";
+    document.getElementById("action-select").style.display = "none";
+    document.getElementById("action-spawn").style.display = "none";
   }
 }
 
@@ -90,6 +91,7 @@ function setTypes(data) {
   }
 
   actionSpawnTypes.innerHTML = options.join("");
+  if (action.type) actionSpawnTypes.value = String(action.type);
 }
 
 function setObservation(loop, player) {
@@ -99,13 +101,8 @@ function setObservation(loop, player) {
     const mm = (minutes >= 10) ? minutes : "0" + minutes;
     const ss = (seconds >= 10) ? seconds : "0" + seconds;
 
-    if (!isStarted) {
-      document.getElementById("player").style.display = "inline";
-      commands.resume();
-    }
-
     document.getElementById("clock").innerHTML = `${mm}:${ss} (${loop})`;
-    isStarted = true;
+    document.getElementById("player").style.display = "inline";
   }
 
   if (player) {
@@ -117,14 +114,13 @@ function setObservation(loop, player) {
 
 window.addEventListener("message", function({ data }) {
   switch (data.type) {
-    case "config": return setConfig(data.config);
     case "observation": return setObservation(data.loop, data.player);
+    case "controls": return setControls(data.config, data.action);
     case "types": return setTypes(data.types);
-    default: if (commands[data.type]) commands[data.type]();
   }
 });
 
-for (const command in commands) {
+for (const command of COMMANDS) {
   document.getElementById(command).addEventListener("click", () => {
     vscode.postMessage({ event: command });
   });
@@ -133,25 +129,16 @@ for (const command in commands) {
 document.getElementById("mouse").addEventListener("click", () => {
   if (action.mode === "kill") {
     action.mode = "select";
-    document.getElementById("action-kill").style.display = "none";
-    document.getElementById("action-select").style.display = "inline";
-    document.getElementById("action-spawn").style.display = "none";
   } else if (action.mode === "select") {
     if (config.mouse !== false) {
       action.mode = "spawn";
       action.owner = 2;
       action.type = Number(actionSpawnTypes.value);
-      document.getElementById("action-kill").style.display = "none";
-      document.getElementById("action-select").style.display = "none";
-      document.getElementById("action-spawn").style.display = "inline";
     }
   } else if (action.mode === "spawn") {
     action.mode = "kill";
     delete action.owner;
     delete action.type;
-    document.getElementById("action-kill").style.display = "inline";
-    document.getElementById("action-select").style.display = "none";
-    document.getElementById("action-spawn").style.display = "none";
   }
 
   vscode.postMessage({ event: "mouse", action });

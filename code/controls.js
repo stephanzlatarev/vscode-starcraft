@@ -29,7 +29,7 @@ class Controls {
       }
     }.bind(this));
 
-    this.renew();
+    timer.add(this.tick, 40);
   }
 
   detach() {
@@ -40,12 +40,9 @@ class Controls {
   renew() {
     // Clear cached data so that it's posted again
     this.observation = null;
-    this.activeConfig = null;
+    this.activeAction = null;
+    this.activeState = null;
     this.activeTypes = null;
-
-    this.setConfig(this.config);
-
-    timer.add(this.tick, 40);
   }
 
   refresh() {
@@ -54,19 +51,23 @@ class Controls {
     const observation = game.get("observation");
 
     if (observation && (observation !== this.observation)) {
-      this.container.webview.postMessage({
+      post(this, {
         type: "observation",
         loop: observation.observation.gameLoop,
         player: observation.observation.playerCommon
+      }, () => {
+        this.observation = observation;
       });
-
-      this.observation = observation;
     }
 
-    if (this.activeConfig !== this.config) {
-      post(this, { type: "config", config: this.config });
-
-      this.activeConfig = this.config;
+    if ((this.activeAction !== this.action) || (this.activeState !== this.state)) {
+      post(this,
+        { type: "controls", config: this.state, action: this.action },
+        () => {
+          this.activeAction = this.action;
+          this.activeState = this.state;
+        }
+      );
     }
 
     if (this.activeTypes !== Types.units.size) {
@@ -79,14 +80,21 @@ class Controls {
       }
       types.sort((a, b) => a.name.localeCompare(b.name));
 
-      post(this, { type: "types", types: types });
-
-      this.activeTypes = Types.units.size;
+      post(this,
+        { type: "types", types: types },
+        () => {
+          this.activeTypes = Types.units.size;
+        }
+      );
     }
   }
 
-  setConfig(flags) {
-    this.config = { ...flags };
+  reset(config, action) {
+    this.config = { ...config };
+    this.action = { ...action };
+    this.state = { back: false, forth: false, resume: false, ...config };
+
+    this.renew();
   }
 
   back() {
@@ -122,14 +130,28 @@ class Controls {
       this.resume();
     } else {
       this.isPaused = true;
-      post(this, { type: "pause" });
+      this.activeState = null;
+
+      this.state.back = true;
+      this.state.forth = true;
+      this.state.pause = false;
+      this.state.resume = true;
+      this.state.skip = false;
+
       game.pause();
     }
   }
 
   resume() {
     this.isPaused = false;
-    post(this, { type: "resume" });
+    this.activeState = null;
+
+    this.state.back = false;
+    this.state.forth = false;
+    this.state.pause = true;
+    this.state.resume = false;
+    this.state.skip = (this.config.skip !== false);
+
     game.resume();
   }
 
@@ -140,9 +162,13 @@ class Controls {
 
 }
 
-function post(controls, message) {
+function post(controls, message, onPosted) {
   if (controls.container) {
     controls.container.webview.postMessage(message);
+
+    if (onPosted) {
+      onPosted();
+    }
   }
 }
 
