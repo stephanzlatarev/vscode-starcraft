@@ -30,6 +30,7 @@
     </span>
   </div>
   <div id="controls">
+    <div id="speed" class="button" style="display: none">&#x23F2;</div>
     <div id="back" class="button" style="display: none">&#x23EE; 1 frame</div>
     <div id="forth" class="button" style="display: none">&#x23ED; 1 frame</div>
     <div id="pause" class="button" style="display: none">&#x23F8; pause</div>
@@ -46,7 +47,7 @@
 </body>
 
 <script>
-const COMMANDS = ["back", "forth", "pause", "resume", "skip"];
+const COMMANDS = ["back", "forth", "pause", "resume", "skip", "speed"];
 const LOOPS_PER_SECOND = 22.4;
 const LOOPS_PER_MINUTE = LOOPS_PER_SECOND * 60;
 
@@ -63,6 +64,8 @@ function setControls(c, a) {
   for (const command of COMMANDS) {
     document.getElementById(command).style.display = ((config[command] === false) || (controls[command] === false)) ? "none" : "block";
   }
+
+  document.getElementById("speed").innerHTML = "&#x23F2; " + config.speed;
 
   if ((config.mouse === false) || (action.mode === "select")) {
     document.getElementById("action-kill").style.display = "none";

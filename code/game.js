@@ -21,6 +21,7 @@ class Game {
 
   stepSize = 1;
   stepSkip = 0;
+  stepTime = 0;
 
   error = null;
 
@@ -30,6 +31,10 @@ class Game {
       "-v", files.getReplaysPath().split(":").join("") + ":/replays",
       "stephanzlatarev/starcraft"
     ]);
+  }
+
+  setStepTime(millis) {
+    this.stepTime = millis;
   }
 
   async connect() {
@@ -42,7 +47,7 @@ class Game {
     return this.state.get(key);
   }
 
-  onEvent(key, value, status) {
+  async onEvent(key, value, status) {
     if (value.error > 1) return this.error = value.errorDetails;
 
     if (!this.isCreated && ((status === 2) || (status === 3))) this.isCreated = true;
@@ -55,6 +60,8 @@ class Game {
         Types.read(value);
       } else if (key === "step") {
         history.add(loop(this), this.state);
+
+        if (status === 3) await delay(this, true);
 
         const gameInfo = this.state.get("gameInfo");
         const observation = this.state.get("observation");
@@ -233,6 +240,7 @@ class Game {
     this.isPaused = false;
     this.stepSize = 1;
     this.stepSkip = 0;
+    this.stepTime = 0;
 
     this.state = new Map();
     this.error = null;
@@ -274,6 +282,26 @@ async function stepReplay(game, duration) {
 
     // Only remove the current skip if there was stepSkip before the asynchronous step
     if (skip) game.stepSkip = 0;
+
+    // Delay if necessary for the set speed
+    await delay(game, false);
+  }
+}
+
+async function delay(game, shouldSendPauseCode) {
+  if (game.stepTime) {
+    const elapsed = Date.now() - game.lastStepTime;
+    const delay = game.stepTime - elapsed;
+
+    if (delay > 0) {
+      if (shouldSendPauseCode && !game.isPaused) game.game.send(Connection.CODE_PAUSE);
+
+      await sleep(delay);
+
+      if (shouldSendPauseCode && !game.isPaused) game.game.send(Connection.CODE_RESUME);
+    }
+
+    game.lastStepTime = Date.now();
   }
 }
 

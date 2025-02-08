@@ -26,6 +26,7 @@ class Controls {
         case "pause": return this.pause();
         case "resume": return this.resume();
         case "skip": return this.skip();
+        case "speed": return this.speed();
       }
     }.bind(this));
 
@@ -92,7 +93,7 @@ class Controls {
   reset(config, action) {
     this.config = { ...config };
     this.action = { ...action };
-    this.state = { back: false, forth: false, resume: false, ...config };
+    this.state = { back: false, forth: false, resume: false, speed: "fast speed", ...config };
 
     this.renew();
   }
@@ -158,6 +159,32 @@ class Controls {
   skip() {
     post(this, { type: "skip" });
     game.skip();
+  }
+
+  speed() {
+    if (this.config.speed >= 16) {
+      this.config.speed = 0;
+      this.state.speed = "fast speed";
+      game.setStepTime(0);
+    } else if (this.config.speed >= 4) {
+      this.config.speed = 16;
+      this.state.speed = "x16 slower";
+      game.setStepTime(16 * 1000 / 22.4);
+    } else if (this.config.speed >= 2) {
+      this.config.speed = 4;
+      this.state.speed = "x4 slower";
+      game.setStepTime(4 * 1000 / 22.4);
+    } else if (this.config.speed >= 1) {
+      this.config.speed = 2;
+      this.state.speed = "x2 slower";
+      game.setStepTime(2 * 1000 / 22.4);
+    } else {
+      this.config.speed = 1;
+      this.state.speed = "clock time";
+      game.setStepTime(1000 / 22.4);
+    }
+
+    this.activeState = null;
   }
 
 }
