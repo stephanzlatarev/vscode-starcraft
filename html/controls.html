@@ -40,14 +40,16 @@
     <div>
       <span id="mouse" class="button">&#x1F5B1; mouse</span>
       <span id="action-select">selects unit</span>
-      <span id="action-spawn" style="display: none">spawns enemy <select id="action-spawn-types"></select></span>
+      <span id="action-spawn" style="display: none">
+        spawns <span id="owner" style="cursor: pointer">enemy</span> <select id="action-spawn-types"></select>
+      </span>
       <span id="action-kill" style="display: none">kills unit</span>
     </div>
   </div>
 </body>
 
 <script>
-const COMMANDS = ["back", "forth", "pause", "resume", "skip", "speed"];
+const COMMANDS = ["back", "forth", "owner", "pause", "resume", "skip", "speed"];
 const LOOPS_PER_SECOND = 22.4;
 const LOOPS_PER_MINUTE = LOOPS_PER_SECOND * 60;
 
@@ -73,6 +75,8 @@ function setControls(c, a) {
     document.getElementById("action-spawn").style.display = "none";
   } else if (action.mode === "spawn") {
     actionSpawnTypes.value = String(action.type);
+    document.getElementById("owner").innerHTML = (action.owner === 1) ? "own" : "enemy";
+    document.getElementById("owner").style.display = "inline";
 
     document.getElementById("action-kill").style.display = "none";
     document.getElementById("action-select").style.display = "none";

@@ -23,6 +23,7 @@ class Controls {
         case "back": return this.back();
         case "forth": return this.forth();
         case "mouse": return this.mouse(message.action);
+        case "owner": return toggleSpawnOwner(this);
         case "pause": return this.pause();
         case "resume": return this.resume();
         case "skip": return this.skip();
@@ -187,6 +188,11 @@ class Controls {
     this.activeState = null;
   }
 
+}
+
+function toggleSpawnOwner(controls) {
+  controls.action.owner = (controls.action.owner === 2) ? 1 : 2;
+  controls.activeAction = null;
 }
 
 function post(controls, message, onPosted) {
