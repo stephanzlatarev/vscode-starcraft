@@ -1,0 +1,39 @@
+<!-- Fragment start -->
+
+<span class="head">Play in place of</span>
+<form style="display: inline">
+  <select id="player">
+    <option value="1" selected="true">Player 1</option>
+    <option value="2">Player 2</option>
+  </select>
+  against
+  <select id="difficulty">
+    <option value="1">Very Easy</option>
+    <option value="2">Easy</option>
+    <option value="3">Medium</option>
+    <option value="4">Hard</option>
+    <option value="5">Harder</option>
+    <option value="6">Very Hard</option>
+    <option value="7" selected="true">Elite</option>
+    <option value="8">Cheater (Vision)</option>
+    <option value="9">Cheater (Resources)</option>
+    <option value="10">Cheater (Insane)</option>
+  </select>
+  Computer
+
+  <button id="save" type="button">Start</button>
+</form>
+
+<script>
+  const vscode = acquireVsCodeApi();
+
+  document.getElementById("save").addEventListener("click", function(event) {
+    vscode.postMessage({
+      type: "play",
+      player: Number(document.getElementById("player").value),
+      difficulty: Number(document.getElementById("difficulty").value),
+    });
+  });
+</script>
+
+<!-- Fragment end -->

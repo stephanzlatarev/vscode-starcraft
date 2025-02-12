@@ -9,6 +9,7 @@ const files = require("./files.js");
 const game = require("./game.js");
 const minimap = require("./minimap.js");
 const timer = require("./timer.js");
+const BotPlay = require("./botplay.js");
 const Checklist = require("./checklist.js");
 const Host = require("./host.js");
 const units = require("./units.js");
@@ -18,6 +19,7 @@ let activeContainer;
 function activate(context) {
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);
 
+  BotPlay.setStarter(start);
   files.setExtensionUri(context.extensionUri);
 
   context.subscriptions.push(vscode.commands.registerCommand("starcraft.start", () => {
@@ -67,39 +69,62 @@ function activate(context) {
   timer.start();
 }
 
-async function start(container, document) {
-  activeContainer = container;
+async function start(container, document, additionalChecks) {
+  exitGame();
 
-  container.onDidDispose(function() {
-    if (container === activeContainer) {
-      vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);
+  if (container && (container !== activeContainer)) {
+    activeContainer = container;
+  
+    container.webview.onDidReceiveMessage(function(message) {
+      if (message.event === "click") {
+        controls.click(message.x, message.y);
+      } else if (message.event === "pause") {
+        controls.pause(true);
+      }
+    });
 
-      activeContainer = null;
-      game.reset();
-      debug.stop();
-      details.stop();
-    }
-  });
+    container.onDidDispose(function() {
+      if (container === activeContainer) {
+        activeContainer = null;
+
+        exitGame();
+      }
+    });
+  } else {
+    container = activeContainer;
+  }
 
   const prerequisites = [
-    [() => docker.checkClient(), "Check Docker Client"],
-    [() => docker.checkServer(), "Check Docker Server"],
-    [() => docker.checkImage(), "Download StarCraft II"],
-    [() => game.init(), "Start StarCraft II"],
-    [() => game.connect(), "Connect to StarCraft II"],
+    ["docker-client", () => docker.checkClient(), "Check Docker Client"],
+    ["docker-server", () => docker.checkServer(), "Check Docker Server"],
+    ["download-game", () => docker.checkImage(), "Download StarCraft II"],
+    ["start-game",    () => game.init(), "Start StarCraft II"],
+    ["connect-game",  () => game.connect(), "Connect to StarCraft II"],
   ];
 
   const checks = document ?
   [
     ...prerequisites,
-    [() => files.copyReplayFile(document.uri), "Get replay file"],
-    [() => game.play(files.getFileName(document.uri)), "Start the replay"],
+    ["copy-replay",  () => files.copyReplayFile(document.uri), "Get replay file"],
+    ["start-replay", () => game.play(files.getFileName(document.uri)), "Start the replay"],
   ] : [
     ...prerequisites,
-    [() => game.play(), "Open StarCraft II API endpoint at ws://127.0.0.1:5000/sc2api"],
-    [() => game.host(), new Host(container)],
-    [() => game.start(), "Wait for a bot to join the game"],
+    ["start-api", () => game.play(), "Open StarCraft II API endpoint at ws://127.0.0.1:5000/sc2api"],
+    ["host-game", () => game.host(), new Host()],
+    ["wait-bot",  () => game.start(), "Wait for a bot to join the game"],
   ];
+
+  if (additionalChecks) {
+    for (const check of additionalChecks) {
+      const index = findCheckIndex(checks, check);
+
+      if (index >= 0) {
+        checks[index] = check;
+      } else {
+        checks.push(check);
+      }
+    }
+  }
 
   const checklist = new Checklist(container);
 
@@ -117,27 +142,32 @@ async function start(container, document) {
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", true);
 
   camera.attach(container);
-  controls.reset(document ? { mouse: false } : { skip: false }, { mode: "select" });
+  controls.reset(document ? { mouse: false } : { botplay: false, skip: false }, { mode: "select" });
   debug.start();
   details.start();
-  
-  container.webview.onDidReceiveMessage(function(message) {
-    if (message.event === "click") {
-      controls.click(message.x, message.y);
-    } else if (message.event === "pause") {
-      controls.pause(true);
-    }
-  });
+}
+
+function exitGame() {
+  vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);
+
+  game.reset();
+  debug.stop();
+  details.stop();
+}
+
+function findCheckIndex(checks, check) {
+  for (let i = 0; i < checks.length; i++) {
+    if (checks[i][0] === check[0]) return i;
+  }
 }
 
 function deactivate() {
   activeContainer = false;
-  timer.stop();
-  game.stop();
-  debug.stop();
-  details.stop();
 
-  vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);
+  exitGame();
+
+  game.stop();
+  timer.stop();
 }
 
 module.exports = { activate, deactivate };

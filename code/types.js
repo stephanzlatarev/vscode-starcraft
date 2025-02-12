@@ -1,10 +1,10 @@
 
-class Types {
+const KIND_UNIT = 0;
+const KIND_BUILDING = 1;
+const KIND_MINERAL_FIELD = 2;
+const KIND_VESPENE_GEYSER = 3;
 
-  static KIND_UNIT = 0;
-  static KIND_BUILDING = 1;
-  static KIND_MINERAL_FIELD = 2;
-  static KIND_VESPENE_GEYSER = 3;
+class Types {
 
   abilities = new Map();
   infos = new Map();
@@ -45,7 +45,7 @@ class Types {
       for (const unit of data.units) {
         if (unit.unitId && unit.name) {
           const kind = getKind(unit);
-          const alias = (unit.race && ((kind === Types.KIND_UNIT) || (kind === Types.KIND_BUILDING))) ? ALIASES[unit.name] : null;
+          const alias = (unit.race && ((kind === KIND_UNIT) || (kind === KIND_BUILDING))) ? ALIASES[unit.name] : null;
 
           const type = {
             kind: kind,
@@ -63,13 +63,13 @@ class Types {
 
 function getKind(unit) {
   if (unit.name.indexOf("MineralField") >= 0) {
-    return Types.KIND_MINERAL_FIELD;
+    return KIND_MINERAL_FIELD;
   } else if (unit.name.indexOf("Geyser") >= 0) {
-    return Types.KIND_VESPENE_GEYSER;
+    return KIND_VESPENE_GEYSER;
   } else if (unit.attributes && (unit.attributes.indexOf(8) >= 0)) {
-    return Types.KIND_BUILDING;
+    return KIND_BUILDING;
   } else {
-    return Types.KIND_UNIT;
+    return KIND_UNIT;
   }
 }
 

@@ -106,9 +106,9 @@ class Game {
     if (replayFileName) {
       // Viewing a replay
       const replayPath = "/replays/" + replayFileName;
-      const replayInfo = await this.game.request({ replayInfo: { replayPath } });
+      const replayInfo = await this.request({ replayInfo: { replayPath } });
 
-      await this.game.request({
+      await this.request({
         startReplay: {
           replayPath,
           observedPlayerId: 1,
@@ -124,8 +124,8 @@ class Game {
 
       if (this.error) throw new Error(this.error);
 
-      await this.game.request({ data: { abilityId: true, unitTypeId: true } });
-      await this.game.request({ gameInfo: {} });
+      await this.request({ data: { abilityId: true, unitTypeId: true } });
+      await this.request({ gameInfo: {} });
 
       stepReplay(this, replayInfo.gameDurationLoops);
     }
@@ -145,13 +145,14 @@ class Game {
     }
 
     if (this.isJoined) {
-      await this.game.request({ data: { abilityId: true, unitTypeId: true } });
-      await this.game.request({ gameInfo: {} });
+      await this.request({ data: { abilityId: true, unitTypeId: true } });
+      await this.request({ gameInfo: {} });
+      await this.request({ observation: {} });
     }
   }
 
   async request(message) {
-    await this.game.request(message);
+    return await this.game.request(message);
   }
 
   async spawn(owner, type, x, y) {
@@ -176,7 +177,7 @@ class Game {
         });
         this.state.set("observation", { ...observation });
       } else {
-        await this.game.request({ debug: { debug: [{ createUnit: { unitType: type, owner: owner, pos: { x: x, y: y }, quantity: 1 } }] } });
+        await this.request({ debug: { debug: [{ createUnit: { unitType: type, owner: owner, pos: { x: x, y: y }, quantity: 1 } }] } });
       }
     }
   }
@@ -186,7 +187,7 @@ class Game {
       if (unit.tag.startsWith(SPAWN_ID)) {
         this.spawning.delete(unit.tag);
       } else {
-        await this.game.request({ debug: { debug: [{ killUnit: { tag: [unit.tag] } }] } });
+        await this.request({ debug: { debug: [{ killUnit: { tag: [unit.tag] } }] } });
       }
 
       if (this.isPaused) {
@@ -219,7 +220,7 @@ class Game {
   async resume() {
     if (this.game && this.isPaused) {
       if (this.spawning.size) {
-        await this.game.request({ debug: { debug: [...this.spawning.values()] } });
+        await this.request({ debug: { debug: [...this.spawning.values()] } });
       }
 
       this.spawning.clear();

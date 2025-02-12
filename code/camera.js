@@ -20,21 +20,25 @@ class Camera {
   tick = this.render.bind(this);
 
   async attach(container) {
-    this.container = container;
     this.focus = null;
 
+    if (this.container !== container) {
+      container.onDidChangeViewState(this.renew.bind(this));
+      container.onDidDispose(this.detach.bind(this));
+
+      container.webview.onDidReceiveMessage(function(message) {
+        if (message.event === "ready") this.shouldRender = true;
+        if (message.event === "resize") this.resize(message.width, message.height);
+        if (message.event === "scroll") this.move(message.x, message.y);
+        if (message.event === "wheel") this.zoom(message.x, message.y, message.delta);
+      }.bind(this));
+    }
+
+    this.container = container;
+
+    container.retainContextWhenHidden = true;
     container.webview.options = { enableScripts: true };
     container.webview.html = await files.readHtmlFile("map.html");
-    container.retainContextWhenHidden = true;
-    container.onDidChangeViewState(this.renew.bind(this));
-    container.onDidDispose(this.detach.bind(this));
-
-    container.webview.onDidReceiveMessage(function(message) {
-      if (message.event === "ready") this.shouldRender = true;
-      if (message.event === "resize") this.resize(message.width, message.height);
-      if (message.event === "scroll") this.move(message.x, message.y);
-      if (message.event === "wheel") this.zoom(message.x, message.y, message.delta);
-    }.bind(this));
 
     this.renew();
   }
@@ -208,7 +212,10 @@ class Camera {
         }
       }
 
-      if (spheres.length) data.spheres = spheres;
+      if (spheres.length) {
+        if (!data) data = {};
+        data.spheres = spheres;
+      }
 
       this.debugSpheres = debugSpheres;
     }

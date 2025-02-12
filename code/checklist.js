@@ -18,7 +18,7 @@ class Checklist {
     container.onDidDispose(this.close.bind(this));
   }
 
-  track(promise, check) {
+  track(_, promise, check) {
     if (!this.container) return;
 
     this.checks.push(check);
@@ -28,10 +28,12 @@ class Checklist {
       try {
         const result = await promise();
 
-        render(this, SUCCESS);
+        await render(this, SUCCESS);
+
         resolve(result);
       } catch (error) {
-        render(this, FAILURE, error.message);
+        await render(this, FAILURE, error.message);
+
         reject(error);
       }
     }.bind(this));
@@ -62,14 +64,12 @@ async function render(checklist, status, details) {
   ];
 
   for (let i = 0; i < checklist.checks.length - 1; i++) {
-    const check = checklist.checks[i];
-    const markup = (check instanceof Host) ? check.complete() : "<span class='head'>" + check + "</span>";
-
-    html.push("<div>", FLAG[SUCCESS], markup, "</div>");
+    html.push("<div>", FLAG[SUCCESS], await getMarkup(checklist.checks[i], "complete", checklist.container), "</div>");
   }
 
   const check = checklist.checks[checklist.checks.length - 1];
-  const markup = (check instanceof Host) ? (!status ? await check.checking() : check.complete()) : "<span class='head'>" + check + "</span>";
+  const markup = await getMarkup(check, status, checklist.container);
+
   html.push("<div>", FLAG[status], markup, details || "", "</div>");
 
   html.push(
@@ -77,8 +77,19 @@ async function render(checklist, status, details) {
     "</html>",
   );
 
+  // Check again if the container is active because it may have meanwhile been disposed
   if (checklist.container) {
     checklist.container.webview.html = html.join(" ");
+  }
+}
+
+async function getMarkup(check, status, container) {
+  const markup = status ? check.complete : check.checking;
+
+  if (markup instanceof Function) {
+    return await markup.bind(check)(container);
+  } else {
+    return "<span class='head'>" + (markup || check) + "</span>";
   }
 }
 

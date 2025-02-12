@@ -3,31 +3,28 @@ const game = require("./game.js");
 
 class Host {
 
-  constructor(container) {
-    container.webview.onDidReceiveMessage(function(message) {
-      if (message.type === "host") {
-        game.request({
-          createGame: {
-            localMap: { mapPath: message.map },
-            playerSetup: [
-              { type: 1, race: 4 },
-              { type: 2, race: message.race, difficulty: message.difficulty, playerName: "Computer" },
-            ],
-            realtime: false,
-          }
-        });
-      }
-    });
-  }
+  complete = "Create game";
 
-  async checking() {
+  async checking(container) {
+    container.webview.onDidReceiveMessage(this.onMessage.bind(this));
+
     return await files.readHtmlFile("host.html");
   }
 
-  complete() {
-    return "<span class='head'>Create game</span>";
+  onMessage(message) {
+    if (message.type === "host") {
+      game.request({
+        createGame: {
+          localMap: { mapPath: message.map },
+          playerSetup: [
+            { type: 1, race: 4 },
+            { type: 2, race: message.race, difficulty: message.difficulty, playerName: "Computer" },
+          ],
+          realtime: false,
+        }
+      });
+    }
   }
-
 }
 
 module.exports = Host;

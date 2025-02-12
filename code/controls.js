@@ -1,3 +1,4 @@
+const BotPlay = require("./botplay.js");
 const camera = require("./camera.js");
 const files = require("./files.js");
 const game = require("./game.js");
@@ -21,6 +22,7 @@ class Controls {
     container.webview.onDidReceiveMessage(function(message) {
       switch (message.event) {
         case "back": return this.back();
+        case "botplay": return new BotPlay();
         case "forth": return this.forth();
         case "mouse": return this.mouse(message.action);
         case "owner": return toggleSpawnOwner(this);
@@ -94,7 +96,12 @@ class Controls {
   reset(config, action) {
     this.config = { ...config };
     this.action = { ...action };
-    this.state = { back: false, forth: false, resume: false, speed: "fast speed", ...config };
+
+    if (game.isPaused) {
+      this.state = { back: false, botplay: false, forth: false, pause: false, resume: true, speed: "fast speed", ...config };
+    } else {
+      this.state = { back: false, botplay: false, forth: false, resume: false, speed: "fast speed", ...config };
+    }
 
     this.renew();
   }
@@ -135,6 +142,7 @@ class Controls {
       this.activeState = null;
 
       this.state.back = true;
+      this.state.botplay = (this.config.botplay !== false);
       this.state.forth = true;
       this.state.pause = false;
       this.state.resume = true;
@@ -149,6 +157,7 @@ class Controls {
     this.activeState = null;
 
     this.state.back = false;
+    this.state.botplay = false;
     this.state.forth = false;
     this.state.pause = true;
     this.state.resume = false;

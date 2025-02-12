@@ -1,0 +1,13 @@
+<!-- Fragment start -->
+
+<span id="status" class="head">Check status</span>
+
+<script>
+  window.addEventListener("message", function({ data }) {
+    if (data.type === "status") {
+      document.getElementById("status").innerHTML = data.text;
+    }
+  });
+</script>
+
+<!-- Fragment end -->

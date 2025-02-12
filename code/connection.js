@@ -66,6 +66,10 @@ class Connection {
         return this.resolve(request.debug);
       }
 
+      if (decoded.error && decoded.error.length) {
+        return this.reject("Error: " + decoded.error.join(" "));
+      }
+
       const response = Response.toObject(decoded, { bytes: Array, longs: String, defaults: true });
 
       for (const key in response) {
@@ -80,7 +84,7 @@ class Connection {
         }
       }
 
-      this.reject("Unable to parse response:", Object.keys(response));
+      this.reject("Unable to parse response: " + Object.keys(response));
     } catch (error) {
       this.reject(error);
     }
