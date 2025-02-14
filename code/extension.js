@@ -69,7 +69,7 @@ function activate(context) {
   timer.start();
 }
 
-async function start(container, document, additionalChecks) {
+async function start(container, document, includeKey, includeChecks) {
   exitGame();
 
   if (container && (container !== activeContainer)) {
@@ -114,14 +114,11 @@ async function start(container, document, additionalChecks) {
     ["wait-bot",  () => game.start(), "Wait for a bot to join the game"],
   ];
 
-  if (additionalChecks) {
-    for (const check of additionalChecks) {
-      const index = findCheckIndex(checks, check);
-
-      if (index >= 0) {
-        checks[index] = check;
-      } else {
-        checks.push(check);
+  if (includeKey && includeChecks) {
+    for (let index = 0; index < checks.length; index++) {
+      if (checks[index][0] === includeKey) {
+        checks.splice(index, 0, ...includeChecks);
+        break;
       }
     }
   }
@@ -153,12 +150,6 @@ function exitGame() {
   game.reset();
   debug.stop();
   details.stop();
-}
-
-function findCheckIndex(checks, check) {
-  for (let i = 0; i < checks.length; i++) {
-    if (checks[i][0] === check[0]) return i;
-  }
 }
 
 function deactivate() {

@@ -13,13 +13,18 @@ class BotPlay {
     this.gameInfo = game.get("gameInfo");
     this.observation = game.get("observation");
 
-    start(null, null, [
-      ["host-game",   () => game.host(), {
+    start(null, null, "host-game", [
+      ["pick-side", this.waitForPlayerSelection.bind(this), {
         checking: this.renderPlayerSelection.bind(this),
-        complete: "Create game",
+        complete: "Select players",
       }],
-      ["spawn-units", () => this.spawnUnits(), {
-        checking: this.renderProgress.bind(this),
+      ["set-sides", this.setStartLocations.bind(this), {
+        checking: this.renderProgress,
+        complete: "Set start locations",
+      }],
+      ["wait-bot", game.start.bind(game), "Wait for a bot to join the game"],
+      ["spawn-units", this.spawnUnits.bind(this), {
+        checking: this.renderProgress,
         complete: "Spawn units",
       }],
     ]);
@@ -27,7 +32,12 @@ class BotPlay {
 
   async renderPlayerSelection(container) {
     if (this.webview !== container.webview) {
-      container.webview.onDidReceiveMessage(this.onMessage.bind(this));
+      container.webview.onDidReceiveMessage(function(message) {
+        if (message.type === "play") {
+          this.player = message.player;
+          this.difficulty = message.difficulty;
+        }
+      }.bind(this));
 
       this.webview = container.webview;
     }
@@ -39,25 +49,56 @@ class BotPlay {
     return await files.readHtmlFile("progress.html");
   }
 
-  onMessage(message) {
-    if (message.type === "play") {
-      const map = this.gameInfo.localMapPath;
-      const races = this.gameInfo.playerInfo.map(one => one.raceActual);
-      const opponentRace = races[(message.player === 1) ? 1 : 0];
+  async waitForPlayerSelection() {
+    while (!this.player || !this.difficulty) {
+      await sleep(200);
+    }
+  }
 
-      this.player = message.player;
+  async setStartLocations() {
+    const map = this.gameInfo.localMapPath;
+    const races = this.gameInfo.playerInfo.map(one => one.raceActual);
+    const botRace = races[(this.player === 1) ? 0 : 1];
+    const opponentRace = races[(this.player === 1) ? 1 : 0];
+    const expectedLocation = this.gameInfo.startRaw.startLocations[0];
 
-      game.request({
+    let attempt = 0;
+
+    while (true) {
+      post(this, "Re-create game with matching start location" + (attempt++ ? " (attempt " + attempt + ")" : ""));
+      await game.request({
         createGame: {
           localMap: { mapPath: map },
           playerSetup: [
             { type: 1, race: 4 },
-            { type: 2, race: opponentRace, difficulty: message.difficulty, playerName: "Computer" },
+            { type: 2, race: opponentRace, difficulty: this.difficulty, playerName: "Computer" },
           ],
           realtime: false,
         }
       });
+
+      await game.request({
+        joinGame: {
+          options: { raw: true },
+          race: botRace,
+        }
+      });
+
+      const gameInfo = await game.request({ gameInfo: {} });
+      const actualLocation = gameInfo.startRaw.startLocations[0];
+
+      if (this.player === 1) {
+        if ((actualLocation.x === expectedLocation.x) && (actualLocation.y === expectedLocation.y)) {
+          break;
+        }
+      } else {
+        if ((actualLocation.x !== expectedLocation.x) && (actualLocation.y !== expectedLocation.y)) {
+          break;
+        }
+      }
     }
+
+    game.isJoined = false;
   }
 
   async spawnUnits() {
@@ -113,7 +154,7 @@ class BotPlay {
     // Spawn the buildings before the units so that they get at their exact positions
     post(this, "Spawn buildings");
     for (const unit of desiredUnits) {
-      if (isPlayerBuilding(unit)) {
+      if (isPlayerBuilding(unit) && (unit.buildProgress > 0)) {
         const owner = getUnitOwner(unit, this.player);
   
         await game.request({ debug: { debug: [{ createUnit: { unitType: unit.unitType, owner: owner, pos: unit.pos, quantity: 1 } }] } });
