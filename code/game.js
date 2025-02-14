@@ -65,8 +65,8 @@ class Game {
 
         const gameInfo = this.state.get("gameInfo");
         const observation = this.state.get("observation");
-        const debugspheres = this.state.get("debugspheres");
-        const debugtext = this.state.get("debugtext");
+        const debugshapes = this.state.get("debugshapes");
+        const debugtexts = this.state.get("debugtexts");
         this.state = new Map();
         this.state.set("gameInfo", gameInfo);
 
@@ -74,25 +74,21 @@ class Game {
         // Implement a sync fynction in timer.js that runs only between game steps when the observation is available
         // Then remove this line
         if (observation) this.state.set("observation", observation);
-        if (debugspheres) this.state.set("debugspheres", [...debugspheres]);
-        if (debugtext) this.state.set("debugtext", [...debugtext]);
+        if (debugshapes) this.state.set("debugshapes", [...debugshapes]);
+        if (debugtexts) this.state.set("debugtexts", [...debugtexts]);
       }
     } else if (key === "debug") {
       for (const debug of value.debug) {
         if (debug.draw) {
+          // TODO: Remove once the timer.js sync function is ready
+          this.state.set("debugshapes", []);
+          this.state.set("debugtexts", []);
+
           for (const type in debug.draw) {
-            let list = this.state.get("debug" + type);
+            const items = debug.draw[type];
 
-            if (list) {
-              // TODO: Remove once the timer.js sync function is ready
-              list.length = 0;
-            } else {
-              list = [];
-              this.state.set("debug" + type, list);
-            }
-
-            for (const element of debug.draw[type]) {
-              list.push(element);
+            for (const item of items) {
+              addDebugItem(this.state, type, item);
             }
           }
         }
@@ -256,6 +252,29 @@ class Game {
     execSync("docker rm -f starcraft");
   }
 
+}
+
+function addDebugItem(state, type, item) {
+  switch (type) {
+    case "lines": {
+      const color = item.color ? `rgb(${item.color.r}, ${item.color.g}, ${item.color.b})` : "gold";
+      state.get("debugshapes").push({ shape: "line", x1: item.line.p0.x, y1: item.line.p0.y, x2: item.line.p1.x, y2: item.line.p1.y, z: 1, color: color });
+      break;
+    }
+    case "spheres": {
+      const color = item.color ? `rgb(${item.color.r}, ${item.color.g}, ${item.color.b})` : "gold";
+      state.get("debugshapes").push({ shape: "circle", x: item.p.x, y: item.p.y, r: item.r, color: color });
+      break;
+    }
+    case "text": {
+      if (!item.virtualPos && !item.worldPos) {
+        state.get("debugshapes").push(JSON.parse(item.text));
+      } else {
+        state.get("debugtexts").push(item);
+      }
+      break;
+    }
+  }
 }
 
 async function stepReplay(game, duration) {

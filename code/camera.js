@@ -47,7 +47,7 @@ class Camera {
     this.container = null;
     this.gameInfo = null;
     this.observation = null;
-    this.debugSpheres = null;
+    this.debugShapes = null;
 
     timer.remove(this.tick);
   }
@@ -93,7 +93,7 @@ class Camera {
       // If tagged unit is still on screen then continue following it
       const unit = units.get(this.focus.tag);
 
-      if (!unit || !isOnCamera(unit.pos, this.viewbox)) {
+      if (!unit || !isOnCamera(unit, this.viewbox)) {
         this.focus.tag = null;
       }
     }
@@ -150,7 +150,7 @@ class Camera {
     // Clear cached data so that it's posted again
     this.gameInfo = null;
     this.observation = null;
-    this.debugSpheres = null;
+    this.debugShapes = null;
 
     if (this.container.visible) {
       this.container.webview.postMessage({ type: "icons", path: files.getIconsPath(this.container.webview) });
@@ -165,7 +165,7 @@ class Camera {
 
     const gameInfo = game.get("gameInfo");
     const observation = game.get("observation");
-    const debugSpheres = game.get("debugspheres");
+    const debugShapes = game.get("debugshapes");
 
     let data;
 
@@ -196,28 +196,22 @@ class Camera {
       if (this.viewbox && this.focus && this.focus.tag) {
         const unit = units.get(this.focus.tag);
 
-        if (unit && !isOnCamera(unit.pos, this.viewbox)) {
+        if (unit && !isOnCamera(unit, this.viewbox)) {
           this.move(unit.pos.x, unit.pos.y);
           this.focus.tag = unit.tag;
         }
       }
     }
 
-    if (debugSpheres && ((debugSpheres !== this.debugSpheres) || this.shouldRerender)) {
-      const spheres = [];
+    if (debugShapes && this.viewbox && ((debugShapes !== this.debugShapes) || this.shouldRerender)) {
+      const shapes = debugShapes.filter(shape => isOnCamera(shape, this.viewbox));
 
-      for (const sphere of debugSpheres) {
-        if ((sphere.r < 3) && isOnCamera(sphere.p, this.viewbox)) {
-          spheres.push({ x: sphere.p.x, y: sphere.p.y, r: sphere.r, color: debugColor(sphere.color) });
-        }
-      }
-
-      if (spheres.length) {
+      if (shapes.length) {
         if (!data) data = {};
-        data.spheres = spheres;
+        data.shapes = shapes;
       }
 
-      this.debugSpheres = debugSpheres;
+      this.debugShapes = debugShapes;
     }
 
     if (data) {
@@ -246,12 +240,19 @@ class Camera {
 
 }
 
-function isOnCamera(unit, viewbox) {
-  return (unit.x > viewbox.left) && (unit.y > viewbox.top) && (unit.x < viewbox.left + viewbox.width) && (unit.y < viewbox.top + viewbox.height);
+function isOnCamera(object, viewbox) {
+  if (object.pos) {
+    return isLocationOnCamera(object.pos.x, object.pos.y, viewbox);
+  } else if (object.x && object.y) {
+    return isLocationOnCamera(object.x, object.y, viewbox);
+  } else {
+    if (object.x1 && object.y1 && isLocationOnCamera(object.x1, object.y1, viewbox)) return true;
+    if (object.x2 && object.y2 && isLocationOnCamera(object.x2, object.y2, viewbox)) return true;
+  }
 }
 
-function debugColor(rgb) {
-  return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+function isLocationOnCamera(x, y, viewbox) {
+  return (x > viewbox.left) && (y > viewbox.top) && (x < viewbox.left + viewbox.width) && (y < viewbox.top + viewbox.height);
 }
 
 module.exports = new Camera();

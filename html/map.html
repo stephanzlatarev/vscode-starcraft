@@ -124,7 +124,7 @@ function render(data) {
     if (data.creep) renderCells(layerCreep, data.creep, minx, maxx, miny, maxy, "purple", 0.5);
     if (data.fog) renderCells(layerFog, data.fog, minx, maxx, miny, maxy, "black", 0.2, "invert");
     if (data.showZones) renderZones(isFullView);
-    if (data.spheres) renderShapes(data.spheres);
+    if (data.shapes) renderShapes(data.shapes);
     if (data.units) renderUnits(data.units, isFullView, data.focus ? data.focus.tag : null);
     if (data.units) renderOrders(data.units, isFullView);
 
@@ -179,11 +179,30 @@ function renderOrders(units, isFullView) {
   }
 }
 
-function renderShapes(spheres) {
+function renderShapes(shapes) {
   const svg = [];
 
-  for (const sphere of spheres) {
-    svg.push(`<circle cx="${sphere.x}" cy=${sphere.y} r="${sphere.r}" fill="${sphere.color}" />`);
+  for (const one of shapes) {
+    switch (one.shape) {
+      case "circle": {
+        svg.push(`<circle cx="${one.x}" cy="${one.y}" r="${one.r}" fill="${one.color || 'gold'}" />`);
+        break;
+      }
+      case "line": {
+        svg.push(`<line x1="${one.x1}" y1="${one.y1}" x2="${one.x2}" y2="${one.y2}" stroke-with="${one.z || 1}" stroke="${one.color || 'gold'}" />`);
+        break;
+      }
+      case "polygon": {
+        const points = [];
+
+        for (let i = 0; i < one.points.length; i += 2) {
+          points.push(`${one.points[i]},${one.points[i + 1]}`);
+        }
+
+        svg.push(`<polygon points="${points.join(' ')}" fill="${one.color || 'gold'}" />`);
+        break;
+      }
+    }
   }
 
   layerShapes.innerHTML = svg.join("");

@@ -22,7 +22,7 @@ class MiniMap {
     this.container = null;
     this.gameInfo = null;
     this.observation = null;
-    this.debugSpheres = null;
+    this.debugShapes = null;
     
     timer.remove(this.tick);
   }
@@ -31,7 +31,7 @@ class MiniMap {
     // Clear cached data so that it's posted again
     this.gameInfo = null;
     this.observation = null;
-    this.debugSpheres = null;
+    this.debugShapes = null;
 
     timer.add(this.tick, 1000);
   }
@@ -49,7 +49,7 @@ class MiniMap {
     
     const gameInfo = game.get("gameInfo");
     const observation = game.get("observation");
-    const debugSpheres = game.get("debugspheres");
+    const debugShapes = game.get("debugshapes");
 
     const data = { showZones: true, focus: this.focus };
 
@@ -74,13 +74,13 @@ class MiniMap {
       this.observation = observation;
     }
 
-    if (debugSpheres && (debugSpheres !== this.debugSpheres)) {
-      data.spheres = debugSpheres.map(one => ({ x: one.p.x, y: one.p.y, r: one.r, color: debugColor(one.color) }));
+    if (debugShapes && (debugShapes !== this.debugShapes)) {
+      data.shapes = debugShapes;
 
-      this.debugSpheres = debugSpheres;
+      this.debugShapes = debugShapes;
     }
 
-    if (data.viewbox || data.units || data.spheres) {
+    if (data.viewbox || data.units || data.shapes) {
       this.container.webview.postMessage({ type: "render", data });
 
       return true;

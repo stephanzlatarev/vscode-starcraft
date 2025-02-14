@@ -37,7 +37,7 @@ class Debug {
     const observation = game.get("observation");
 
     if (observation && (observation !== this.observation)) {
-      const lines = game.get("debugtext");
+      const lines = game.get("debugtexts");
       const digest = JSON.stringify(lines);
 
       if (digest !== this.digest) {
