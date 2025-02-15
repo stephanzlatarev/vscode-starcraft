@@ -258,7 +258,7 @@ function addDebugItem(state, type, item) {
   switch (type) {
     case "lines": {
       const color = item.color ? `rgb(${item.color.r}, ${item.color.g}, ${item.color.b})` : "gold";
-      state.get("debugshapes").push({ shape: "line", x1: item.line.p0.x, y1: item.line.p0.y, x2: item.line.p1.x, y2: item.line.p1.y, z: 1, color: color });
+      state.get("debugshapes").push({ shape: "line", x1: item.line.p0.x, y1: item.line.p0.y, x2: item.line.p1.x, y2: item.line.p1.y, width: 1, color: color });
       break;
     }
     case "spheres": {

@@ -189,7 +189,7 @@ function renderShapes(shapes) {
         break;
       }
       case "line": {
-        svg.push(`<line x1="${one.x1}" y1="${one.y1}" x2="${one.x2}" y2="${one.y2}" stroke-with="${one.z || 1}" stroke="${one.color || 'gold'}" />`);
+        svg.push(`<line x1="${one.x1}" y1="${one.y1}" x2="${one.x2}" y2="${one.y2}" stroke-with="${one.width || 1}" stroke="${one.color || 'gold'}" />`);
         break;
       }
       case "polygon": {
