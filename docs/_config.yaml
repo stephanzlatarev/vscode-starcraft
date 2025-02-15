@@ -1,0 +1,6 @@
+title: StarCraft II for AI
+
+plugins:
+  - jekyll-remote-theme
+  - jekyll-include-cache
+remote_theme: just-the-docs/just-the-docs@main
