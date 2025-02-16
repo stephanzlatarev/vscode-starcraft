@@ -32,6 +32,7 @@ class BotPlay {
 
   async renderPlayerSelection(container) {
     if (this.webview !== container.webview) {
+      container.webview.options = { enableScripts: true };
       container.webview.onDidReceiveMessage(function(message) {
         if (message.type === "play") {
           this.player = message.player;
