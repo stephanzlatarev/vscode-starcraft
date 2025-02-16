@@ -32,7 +32,15 @@ class Checklist {
 
         resolve(result);
       } catch (error) {
-        await render(this, FAILURE, error.message);
+        let details;
+
+        if (error instanceof Error) {
+          details = error.message;
+        } else if (error instanceof String) {
+          details = error;
+        }
+
+        await render(this, FAILURE, details);
 
         reject(error);
       }

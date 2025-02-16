@@ -97,7 +97,7 @@ async function start(container, document, includeKey, includeChecks) {
   const prerequisites = [
     ["docker-client", () => docker.checkClient(), "Check Docker Client"],
     ["docker-server", () => docker.checkServer(), "Check Docker Server"],
-    ["download-game", () => docker.checkImage(), "Download StarCraft II"],
+    ["download-game", () => docker.checkImage(), docker],
     ["start-game",    () => game.init(), "Start StarCraft II"],
     ["connect-game",  () => game.connect(), "Connect to StarCraft II"],
   ];
