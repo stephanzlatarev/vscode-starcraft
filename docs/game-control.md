@@ -16,7 +16,8 @@ The following controls are available when watching a replay or when playing a ga
 
 * Change the speed from `FAST SPEED`, to `CLOCK TIME`, to `X2 SLOWER`, to `X4 SLOWER`, to `X16 SLOWER`, and back to `FAST SPEED`
 * Pause and resume. You can use the buttons under `GAME CONTROLS` or `Spacebar` key when the focus is on the camera view
-* While paused, move one frame back or forth. This is limited to 10 seconds before the time the game was paused.
+* While paused, move one frame back or forth. This is limited to 10 seconds before the time the game was paused
+* Use `👁 TOGGLE FOG` to enable and disable fog of war. When your bot is playing, you change the fog for your bot
 
 # Replay controls
 
