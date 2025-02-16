@@ -122,7 +122,7 @@ function render(data) {
     if (grid) renderCells(layerPlacement, grid.placement, minx, maxx, miny, maxy, "#CCCCCC", 1.0);
     if (grid) renderCells(layerPathing, grid.pathing, minx, maxx, miny, maxy, "#AAAAAA", 1.0);
     if (data.creep) renderCells(layerCreep, data.creep, minx, maxx, miny, maxy, "purple", 0.5);
-    if (data.fog) renderCells(layerFog, data.fog, minx, maxx, miny, maxy, "black", 0.2, "invert");
+    if (data.fog) renderCells(layerFog, data.fog, minx, maxx, miny, maxy, "black", 0.2, (shade) => (2 - shade) / 2);
     if (data.showZones) renderZones(isFullView);
     if (data.shapes) renderShapes(data.shapes);
     if (data.units) renderUnits(data.units, isFullView, data.focus ? data.focus.tag : null);
@@ -263,26 +263,38 @@ function renderZones(isFullView) {
   }
 }
 
-function renderCells(layer, cells, minx, maxx, miny, maxy, color, opacity, invert) {
+function renderCells(layer, cells, minx, maxx, miny, maxy, color, opacity, transform) {
   const svg = [];
 
   for (let y = miny; y <= maxy; y++) {
-    let startx = minx - 1;
+    let drawing = false;
+    let drawstart;
+    let drawshade;
 
     for (let x = minx; x <= maxx; x++) {
-      let on = isCellOn(cells, x, y);
+      let shade = getCellShade(cells, x, y);
 
-      if (invert) on = !on;
+      if (transform) {
+        shade = transform(shade);
+      }
 
-      if (on) {
-        if (startx < minx) {
-          startx = x;
-        } else if (x === maxx) {
-          svg.push(`<rect x="${startx}" y=${y} width="${x - startx + 1}" height="1" fill="${color}" opacity="${opacity}" />`);
+      if (shade) {
+        if (drawing) {
+          if (shade !== drawshade) {
+            svg.push(`<rect x="${drawstart}" y=${y} width="${x - drawstart}" height="1" fill="${color}" opacity="${opacity * drawshade}" />`);
+            drawstart = x;
+            drawshade = shade;
+          } else if (x === maxx) {
+            svg.push(`<rect x="${drawstart}" y=${y} width="${x - drawstart + 1}" height="1" fill="${color}" opacity="${opacity * drawshade}" />`);
+          }
+        } else {
+          drawing = true;
+          drawstart = x;
+          drawshade = shade;
         }
-      } else if (startx >= minx) {
-        svg.push(`<rect x="${startx}" y=${y} width="${x - startx}" height="1" fill="${color}" opacity="${opacity}" />`);
-        startx = minx - 1;
+      } else if (drawing) {
+        svg.push(`<rect x="${drawstart}" y=${y} width="${x - drawstart}" height="1" fill="${color}" opacity="${opacity * drawshade}" />`);
+        drawing = false;
       }
     }
   }
@@ -290,7 +302,7 @@ function renderCells(layer, cells, minx, maxx, miny, maxy, color, opacity, inver
   layer.innerHTML = svg.join("");
 }
 
-function isCellOn(cells, x, y) {
+function getCellShade(cells, x, y) {
   if (!cells) return;
   if ((x < 0) || (x > cells.size.x)) return;
   if ((y < 0) || (y > cells.size.y)) return;
@@ -303,7 +315,7 @@ function isCellOn(cells, x, y) {
       const mask = 1 << pos;
       const bit = Math.floor(index / 8);
 
-      return (cells.data[bit] & mask);
+      return (cells.data[bit] & mask) ? 1 : 0;
     }
     case 8: {
       return cells.data[index];
