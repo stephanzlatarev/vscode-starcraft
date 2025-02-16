@@ -23,6 +23,7 @@ class Controls {
       switch (message.event) {
         case "back": return this.back();
         case "botplay": return new BotPlay();
+        case "fog": return game.toggleFog();
         case "forth": return this.forth();
         case "mouse": return this.mouse(message.action);
         case "owner": return toggleSpawnOwner(this);

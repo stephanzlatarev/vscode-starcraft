@@ -4,6 +4,9 @@ const files = require("./files.js");
 const history = require("./history.js");
 const Types = require("./types.js");
 
+const MODE_GAME = "game";
+const MODE_REPLAY = "replay";
+
 const SPAWN_ID = "SPAWN-";
 let spawnIds = 1;
 
@@ -19,6 +22,9 @@ class Game {
   isPaused = false;
   isClosed = false;
 
+  mode = null;
+  disableFog = false;
+
   stepSize = 1;
   stepSkip = 0;
   stepTime = 0;
@@ -31,6 +37,14 @@ class Game {
       "-v", files.getReplaysPath().split(":").join("") + ":/replays",
       "stephanzlatarev/starcraft"
     ]);
+  }
+
+  async toggleFog() {
+    this.disableFog = !this.disableFog;
+
+    if ((this.mode === MODE_GAME) && this.isJoined) {
+      await this.request({ debug: { debug: [{ gameState: 1 }] } });
+    }
   }
 
   setStepTime(millis) {
@@ -101,6 +115,9 @@ class Game {
 
     if (replayFileName) {
       // Viewing a replay
+      this.mode = MODE_REPLAY;
+      this.disableFog = true;
+
       const replayPath = "/replays/" + replayFileName;
       const replayInfo = await this.request({ replayInfo: { replayPath } });
 
@@ -124,6 +141,9 @@ class Game {
       await this.request({ gameInfo: {} });
 
       stepReplay(this, replayInfo.gameDurationLoops);
+    } else {
+      this.mode = MODE_GAME;
+      this.disableFog = false;
     }
   }
 
@@ -293,7 +313,7 @@ async function stepReplay(game, duration) {
     // Check if the replay was closed while waiting for the game step
     if (index !== game.index) return;
 
-    const observation = await game.game.request({ observation: { disableFog: true } });
+    const observation = await game.game.request({ observation: { disableFog: game.disableFog } });
 
     // Check if the replay was closed while waiting for the observation
     if (index !== game.index) return;
