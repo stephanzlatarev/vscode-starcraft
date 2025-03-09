@@ -33,6 +33,7 @@ class Game {
 
   async init() {
     spawnSync("docker", ["run", "-d", "--name", "starcraft",
+      "--platform", "linux/amd64",
       "-p", "5000:5000", "-p", "5001:5001",
       "-v", files.getReplaysPath().split(":").join("") + ":/replays",
       "stephanzlatarev/starcraft"

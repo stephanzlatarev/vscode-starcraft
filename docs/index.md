@@ -29,9 +29,10 @@ You can click on the minimap to move the camera.
 
 ## Limitations
 
-The headless StarCraft II is built for the following architectures:
-* linux/amd64
-* linux/arm64
+The headless StarCraft II is built for linux/amd64 architecture.
+There are no known issues when running on Windows with Docker Desktop.
+On Mac with Apple silicon works with Docker VMM (See Docker Desktop > Settings > General > Virtual Machine Options)
+but doesn't work with Apple Virtualization framework using Rosetta for emulation.
 
 Only the following maps can be used for playing the game or viewing replays:
 * AbyssalReefAIE
