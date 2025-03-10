@@ -40,7 +40,7 @@ class Docker {
     post(progress.webview, "Downloading StarCraft II");
 
     return new Promise(function(resolve, reject) {
-      const pull = spawn("docker", ["pull", "stephanzlatarev/starcraft"]);
+      const pull = spawn("docker", ["pull", "--platform", "linux/amd64", "stephanzlatarev/starcraft"]);
 
       pull.stdout.on("data", (data) => {
         const stdout = data.toString();
