@@ -69,12 +69,12 @@ class Units {
 
       for (const [unit, order] of orders) {
         if (order.targetWorldSpacePos) {
-          unit.order = { x: order.targetWorldSpacePos.x, y: order.targetWorldSpacePos.y };
+          unit.order = { c: order.abilityId, x: order.targetWorldSpacePos.x, y: order.targetWorldSpacePos.y };
         } else if (order.targetUnitTag) {
           const target = index.get(order.targetUnitTag);
 
           if (target) {
-            unit.order = { x: target.x, y: target.y };
+            unit.order = { c: order.abilityId, x: target.x, y: target.y };
           }
         }
       }

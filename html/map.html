@@ -46,7 +46,7 @@ html, body {
   <g id="grid" style="stroke: black; stroke-width: 0.02; fill: none;"></g>
   <g id="zonelines" style="stroke: darkgoldenrod; stroke-width: 0.4; fill: none;"></g>
   <g id="zonetexts" style="fill: darkgoldenrod; font-size: 8"></g>
-  <g id="orders" style="stroke-width: 0.4"></g>
+  <g id="orders" style="stroke-width: 0.2; stroke-linecap: round"></g>
   <g id="units"></g>
   <g id="fog"></g>
   <g id="focus" style="stroke: gold; stroke-width: 0.8; fill: none"></g>
@@ -167,15 +167,24 @@ function renderOrders(units, isFullView) {
     for (const unit of units) {
       if (unit.order && unit.order.x && unit.order.y) {
         const color = OWNER_COLOR[unit.owner] || "white";
-
         const order = unit.order;
+        console.log(order);
         const distance = Math.abs(unit.x - order.x) + Math.abs(unit.y - order.y);
-        const opacity = Math.max(1 - distance / 50, 0.1);
-        svg.push(`<line x1="${unit.x}" y1="${unit.y}" x2="${order.x}" y2="${order.y}" stroke="${color}" stroke-width="0.4" stroke-opacity="${opacity}" />`);
+        const opacity = (distance > 10) ? `stroke-opacity="${Math.max(1 - distance / 50, 0.1)}"` : "";
+        const dasharray = (order.c !== 23) ? `stroke-dasharray="${getOrderDashArray(order)}"` : "";
+
+        svg.push(`<line x1="${order.x}" y1="${order.y}" x2="${unit.x}" y2="${unit.y}" stroke="${color}" ${opacity} ${dasharray} />`);
       }
     }
 
     layerOrders.innerHTML = svg.join("");
+  }
+}
+
+function getOrderDashArray(order) {
+  switch (order.c) {
+    case 16: return "0.4,0.4";
+    default: return "0.2,0.2";
   }
 }
 
@@ -210,19 +219,6 @@ function renderShapes(shapes) {
 
 function renderUnits(units, isFullView, selectedUnitTag) {
   const svg = [];
-
-  if (!isFullView) {
-    for (const unit of units) {
-      const color = OWNER_COLOR[unit.owner] || "white";
-
-      if (unit.order) {
-        const order = unit.order;
-        const distance = Math.abs(unit.x - order.x) + Math.abs(unit.y - order.y);
-        const opacity = Math.max(1 - distance / 50, 0.1);
-        svg.push(`<line x1="${unit.x}" y1="${unit.y}" x2="${order.x}" y2="${order.y}" stroke="${color}" stroke-width="0.4" stroke-opacity="${opacity}" />`);
-      }
-    }
-  }
 
   for (const unit of units) {
     const color = OWNER_COLOR[unit.owner] || "white";
