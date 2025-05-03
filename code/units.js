@@ -25,7 +25,7 @@ class Units {
   
       if (squareDistance > squareRadius) continue;
   
-      if (!bestUnit || (squareDistance < bestSquareDistance)) {
+      if (!bestUnit || (squareDistance <= bestSquareDistance)) {
         bestUnit = unit;
         bestSquareDistance = squareDistance;
       }

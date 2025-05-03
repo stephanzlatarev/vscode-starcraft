@@ -57,6 +57,7 @@ html, body {
   <g id="pathing" style="stroke: none"></g>
   <g id="placement" style="stroke: none"></g>
   <g id="creep"></g>
+  <g id="neutrals"></g>
   <g id="shapes" opacity="0.2"></g>
   <g id="grid" style="stroke: black; stroke-width: 0.02; fill: none;"></g>
   <g id="zonelines" style="stroke: darkgoldenrod; stroke-width: 0.4; fill: none;"></g>
@@ -78,6 +79,7 @@ const layerCreep = document.getElementById("creep");
 const layerFocus = document.getElementById("focus");
 const layerFog = document.getElementById("fog");
 const layerGrid = document.getElementById("grid");
+const layerNeutrals = document.getElementById("neutrals");
 const layerOrders = document.getElementById("orders");
 const layerPathing = document.getElementById("pathing");
 const layerPlacement = document.getElementById("placement");
@@ -107,6 +109,7 @@ function reset() {
   layerFocus.replaceChildren();
   layerFog.replaceChildren();
   layerGrid.replaceChildren();
+  layerNeutrals.replaceChildren();
   layerOrders.replaceChildren();
   layerPathing.replaceChildren();
   layerPlacement.replaceChildren();
@@ -232,9 +235,10 @@ function renderShapes(shapes) {
 }
 
 function renderUnits(units, isFullView, selectedUnitTag) {
-  const svg = [];
+  const svgs = { units: [], neutrals: [] };
 
   for (const unit of units) {
+    const svg = (unit.owner === 16) ? svgs.neutrals : svgs.units;
     const color = OWNER_COLOR[unit.owner] || "white";
 
     if (isFullView) {
@@ -244,7 +248,8 @@ function renderUnits(units, isFullView, selectedUnitTag) {
     }
   }
 
-  layerUnits.innerHTML = svg.join("");
+  layerNeutrals.innerHTML = svgs.neutrals.join("");
+  layerUnits.innerHTML = svgs.units.join("");
 }
 
 function renderZones(isFullView) {
