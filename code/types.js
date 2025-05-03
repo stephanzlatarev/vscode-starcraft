@@ -7,12 +7,17 @@ const KIND_VESPENE_GEYSER = 3;
 class Types {
 
   abilities = new Map();
+  buffs = new Map();
   infos = new Map();
   products = new Map();
   units = new Map();
 
   ability(id) {
     return this.abilities.get(id) || "";
+  }
+
+  buff(id) {
+    return this.buffs.get(id) || "";
   }
 
   info(id) {
@@ -38,6 +43,12 @@ class Types {
         if (ability.available && ability.buttonName && ALIASES[ability.buttonName]) {
           this.products.set(ability.abilityId, ALIASES[ability.buttonName]);
         }
+      }
+    }
+
+    if (data.buffs) {
+      for (const buff of data.buffs) {
+        this.buffs.set(buff.buffId, buff.name);
       }
     }
 

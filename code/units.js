@@ -116,6 +116,7 @@ function getUnitDetailedInfo(unit) {
     r: unit.radius,
     product: product,
     progress: unit.buildProgress,
+    buff: unit.buffDurationMax ? (unit.buffDurationRemain / unit.buffDurationMax) : 0,
     wip: (unit.displayType === 4) || (unit.buildProgress < 1),
     cloak: (unit.cloak !== 3),
   };

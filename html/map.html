@@ -34,6 +34,11 @@ html, body {
 .cloak {
   opacity: 0.5;
 }
+.buff {
+  fill: none;
+  stroke: YellowGreen;
+  stroke-linecap: round;
+}
 </style>
 
 <body>
@@ -168,7 +173,6 @@ function renderOrders(units, isFullView) {
       if (unit.order && unit.order.x && unit.order.y) {
         const color = OWNER_COLOR[unit.owner] || "white";
         const order = unit.order;
-        console.log(order);
         const distance = Math.abs(unit.x - order.x) + Math.abs(unit.y - order.y);
         const opacity = (distance > 10) ? `stroke-opacity="${Math.max(1 - distance / 50, 0.1)}"` : "";
         const dasharray = (order.c !== 23) ? `stroke-dasharray="${getOrderDashArray(order)}"` : "";
@@ -322,22 +326,22 @@ function getCellShade(cells, x, y) {
 function getUnitDimensions(unit) {
   if (unit.type.kind === 2) {
     // Mineral field
-    return { x: unit.x - 1, y: unit.y - 0.5, width: 2, height: 1, shape: "rect" };
+    return { x: unit.x - 1, y: unit.y - 0.5, width: 2, height: 1, shape: "rect", perimeter: 6 };
   } else if (unit.type.kind === 3) {
     // Vespene geyser
-    return { x: unit.x - 1.5, y: unit.y - 1.5, width: 3, height: 3, shape: "rect" };
+    return { x: unit.x - 1.5, y: unit.y - 1.5, width: 3, height: 3, shape: "rect", perimeter: 12 };
   } else if ((unit.owner !== 1) && (unit.owner !== 2)) {
     // Obstacle
-    return { x: unit.x - 0.5, y: unit.y - 0.5, width: 1, height: 1, shape: "rect" };
+    return { x: unit.x - 0.5, y: unit.y - 0.5, width: 1, height: 1, shape: "rect", perimeter: 4 };
   } else if (unit.type.kind === 1) {
     // Building
     const size = Math.floor(unit.r + unit.r);
     const radius = size / 2;
 
-    return { x: unit.x - radius, y: unit.y - radius, width: size, height: size, shape: "rect" };
+    return { x: unit.x - radius, y: unit.y - radius, width: size, height: size, shape: "rect", perimeter: size * 4 };
   } else {
     // Unit
-    return { x: unit.x - unit.r, y: unit.y - unit.r, width: unit.r + unit.r, height: unit.r + unit.r, shape: "circle" };
+    return { x: unit.x - unit.r, y: unit.y - unit.r, width: unit.r + unit.r, height: unit.r + unit.r, shape: "circle", perimeter: Math.PI * unit.r * 2 };
   }
 }
 
@@ -348,7 +352,7 @@ function renderLowDefinitionUnitRendering(svg, unit, color) {
 }
 
 function getHighDefinitionUnitRendering(svg, unit, color, isSelected) {
-  const { x, y, width, height, shape } = getUnitDimensions(unit);
+  const { x, y, width, height, shape, perimeter } = getUnitDimensions(unit);
   const wip = unit.wip ? "wip" : "";
   const cloak = unit.cloak ? "cloak" : "";
   const select = isSelected ? "select" : "";
@@ -370,6 +374,21 @@ function getHighDefinitionUnitRendering(svg, unit, color, isSelected) {
 
     svg.push(`<image x="${x + 0.2}" y="${y + 0.2}" width="1" height="1" href="${href}" />`);
     svg.push(`<rect x="${x + 0.2}" y="${y + 0.2}" width="1" height="${1 - unit.product.progress}" fill="#555555" opacity="0.8" />`);
+  }
+
+  if (unit.buff > 0) {
+    const buffremain = Math.min(unit.buff, 1) * perimeter;
+    const buffprogress = perimeter - buffremain;
+
+    if (shape === "circle") {
+      const buffdash = `stroke-width="0.1" stroke-dashoffset="${perimeter / 4 + buffprogress}" stroke-dasharray="${buffremain},${buffprogress}"`;
+
+      svg.push(`<circle class="buff" cx="${x + width / 2}" cy="${y + height / 2}" r="${width / 2}" ${buffdash} />`);
+    } else {
+      const buffdash = `stroke-width="0.2" stroke-dashoffset="${-width / 2 - buffprogress}" stroke-dasharray="${buffremain},${buffprogress}"`;
+
+      svg.push(`<rect class="buff" x="${x}" y="${y}" width="${width}" height="${height}" rx="0.2" ry="0.2" ${buffdash} />`);
+    }
   }
 }
 

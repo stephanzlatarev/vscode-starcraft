@@ -82,6 +82,15 @@ function displayUnit(emitter, unit) {
   bar(lines, "Shield:", unit.shield, unit.shieldMax, "135;206;235");
   bar(lines, "Energy:", unit.energy, unit.energyMax, "102;51;153");
 
+  if (unit.buffDurationMax) {
+    lines.push([]);
+    bar(lines, "Buff:  ", unit.buffDurationRemain, unit.buffDurationMax, "154;205;50");
+
+    for (const id of unit.buffIds) {
+      lines.push(["       ", TAB, Types.buff(id)]);
+    }
+  }
+
   if (unit.orders.length) {
     const order = unit.orders[0];
   
