@@ -14,6 +14,7 @@ class Game {
 
   game = new Connection("ws://127.0.0.1:5001/sc2api", this.onEvent.bind(this));
   state = new Map();
+  positions = new Map();
   spawning = new Map();
   index = 1;
 
@@ -71,7 +72,19 @@ class Game {
     if ((status === 3) || (status === 4)) {
       this.state.set(key, value);
 
-      if (key === "data") {
+      if (key === "observation") {
+        const loop = value.observation.gameLoop;
+
+        for (const unit of value.observation.rawData.units) {
+          const oldpos = this.positions.get(unit.tag);
+
+          unit.oldpos = oldpos || unit.pos;
+
+          if (!oldpos || (loop > oldpos.loop)) {
+            this.positions.set(unit.tag, { loop: loop, x: unit.pos.x, y: unit.pos.y });
+          }
+        }
+      } else if (key === "data") {
         Types.read(value);
       } else if (key === "step") {
         history.add(loop(this), this.state);

@@ -48,11 +48,12 @@ class Details {
 
     if (observation && ((observation !== this.observation) || (this.displayedUnitTag !== this.selectedUnitTag))) {
       const unit = units.get(this.selectedUnitTag);
+      const loop = observation.observation.gameLoop;
 
       clearScreen(this.emitter);
 
       if (unit) {
-        displayUnit(this.emitter, unit);
+        displayUnit(this.emitter, unit, loop);
       }
 
       this.observation = observation;
@@ -71,8 +72,9 @@ class Details {
 
 }
 
-function displayUnit(emitter, unit) {
+function displayUnit(emitter, unit, loop) {
   const lines = [];
+  const unitTypeInfo = Types.info(unit.unitType);
 
   lines.push([Types.unit(unit.unitType).name, unit.tag]);
   lines.push([]);
@@ -81,6 +83,13 @@ function displayUnit(emitter, unit) {
   bar(lines, "Health:", unit.health, unit.healthMax, "50;205;50");
   bar(lines, "Shield:", unit.shield, unit.shieldMax, "135;206;235");
   bar(lines, "Energy:", unit.energy, unit.energyMax, "102;51;153");
+
+  if ((unitTypeInfo.movementSpeed > 0) && unit.oldpos) {
+    const loops = loop - unit.oldpos.loop;
+    const distance = Math.sqrt(Math.pow(unit.pos.x - unit.oldpos.x, 2) + Math.pow(unit.pos.y - unit.oldpos.y, 2)) * loops * 22.4;
+
+    bar(lines, "Speed: ", distance, unitTypeInfo.movementSpeed * 22.4 / 16, "0;0;205");
+  }
 
   if (unit.buffDurationMax) {
     lines.push([]);
@@ -117,7 +126,7 @@ function displayUnit(emitter, unit) {
   object(lines, TAB, ["Unit:"], unit);
 
   lines.push([]);
-  object(lines, TAB, ["Type:"], Types.info(unit.unitType));
+  object(lines, TAB, ["Type:"], unitTypeInfo);
 
   emitter.fire(lines.map(line => line.join(" ")).join("\r\n"));
 }
@@ -172,6 +181,8 @@ function object(lines, tab, line, value) {
           if (!isArrayElement) lines.push(line);
           
           for (const key of keys) {
+            if (key === "oldpos") continue;
+
             const head = isArrayElement ? [...line, key + ":"] : [tab, key + ":"];
             object(lines, tab + TAB, head, value[key]);
             isArrayElement = false;
