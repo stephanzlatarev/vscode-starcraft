@@ -39,6 +39,16 @@ html, body {
   stroke: YellowGreen;
   stroke-linecap: round;
 }
+.sightRange {
+  fill: none;
+  stroke: Yellow;
+  stroke-linecap: round;
+}
+.weaponRange {
+  fill: none;
+  stroke: DarkRed;
+  stroke-linecap: round;
+}
 </style>
 
 <body>
@@ -353,6 +363,8 @@ function renderLowDefinitionUnitRendering(svg, unit, color) {
 
 function getHighDefinitionUnitRendering(svg, unit, color, isSelected) {
   const { x, y, width, height, shape, perimeter } = getUnitDimensions(unit);
+  const cx = x + unit.r;
+  const cy = y + unit.r;
   const wip = unit.wip ? "wip" : "";
   const cloak = unit.cloak ? "cloak" : "";
   const select = isSelected ? "select" : "";
@@ -383,11 +395,21 @@ function getHighDefinitionUnitRendering(svg, unit, color, isSelected) {
     if (shape === "circle") {
       const buffdash = `stroke-width="0.1" stroke-dashoffset="${perimeter / 4 + buffprogress}" stroke-dasharray="${buffremain},${buffprogress}"`;
 
-      svg.push(`<circle class="buff" cx="${x + width / 2}" cy="${y + height / 2}" r="${width / 2}" ${buffdash} />`);
+      svg.push(`<circle class="buff" cx="${cx}" cy="${cy}" r="${unit.r}" ${buffdash} />`);
     } else {
       const buffdash = `stroke-width="0.2" stroke-dashoffset="${-width / 2 - buffprogress}" stroke-dasharray="${buffremain},${buffprogress}"`;
 
       svg.push(`<rect class="buff" x="${x}" y="${y}" width="${width}" height="${height}" rx="0.2" ry="0.2" ${buffdash} />`);
+    }
+  }
+
+  if (isSelected) {
+    if (unit.type.sightRange > 0) {
+      svg.push(`<circle class="sightRange" cx="${cx}" cy="${cy}" r="${unit.r + unit.type.sightRange}" stroke-width="0.1" stroke-dasharray="0.05,0.45" />`);
+    }
+
+    for (const range of unit.type.weaponsRange) {
+      svg.push(`<circle class="weaponRange" cx="${cx}" cy="${cy}" r="${unit.r + range}" stroke-width="0.1" stroke-dasharray="0.05,0.45" />`);
     }
   }
 }

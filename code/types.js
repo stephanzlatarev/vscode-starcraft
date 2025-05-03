@@ -62,6 +62,8 @@ class Types {
             kind: kind,
             name: unit.name,
             alias: alias,
+            sightRange: unit.sightRange,
+            weaponsRange: unit.weapons ? unit.weapons.map(weapon => weapon.range) : [],
           };
 
           this.infos.set(unit.unitId, unit);
