@@ -274,6 +274,8 @@ class Game {
     this.stepTime = 0;
 
     this.state = new Map();
+    this.positions = new Map();
+    this.spawning = new Map();
     this.error = null;
 
     history.clear();
