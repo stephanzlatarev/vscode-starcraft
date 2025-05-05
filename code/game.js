@@ -56,6 +56,7 @@ class Game {
   async connect() {
     await this.game.connect();
 
+    this.game.send(Connection.CODE_STOP_SYNC);
     this.game.send(Connection.CODE_RESUME);
   }
 
@@ -89,7 +90,7 @@ class Game {
       } else if (key === "step") {
         history.add(loop(this), this.state);
 
-        if (status === 3) await delay(this, true);
+        if (this.mode === MODE_GAME) await delay(this, true);
 
         const gameInfo = this.state.get("gameInfo");
         const observation = this.state.get("observation");
@@ -158,6 +159,18 @@ class Game {
     } else {
       this.mode = MODE_GAME;
       this.disableFog = false;
+    }
+  }
+
+  async sync() {
+    if (this.mode === MODE_REPLAY) {
+      this.mode = MODE_GAME;
+      this.disableFog = false;
+      this.isCreated = true;
+
+      this.game.send(Connection.CODE_START_SYNC);
+
+      this.resume();
     }
   }
 
@@ -333,6 +346,7 @@ async function stepReplay(game, duration) {
 
     // Check if the replay was closed while waiting for the observation
     if (index !== game.index) return;
+    if (game.mode !== MODE_REPLAY) return;
 
     frame = observation.observation.gameLoop;
 

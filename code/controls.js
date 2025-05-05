@@ -1,4 +1,5 @@
 const BotPlay = require("./botplay.js");
+const BotSync = require("./botsync.js");
 const camera = require("./camera.js");
 const files = require("./files.js");
 const game = require("./game.js");
@@ -23,6 +24,7 @@ class Controls {
       switch (message.event) {
         case "back": return this.back();
         case "botplay": return new BotPlay();
+        case "botsync": return new BotSync();
         case "fog": return game.toggleFog();
         case "forth": return this.forth();
         case "mouse": return this.mouse(message.action);
@@ -99,9 +101,9 @@ class Controls {
     this.action = { ...action };
 
     if (game.isPaused) {
-      this.state = { back: false, botplay: false, forth: false, pause: false, resume: true, speed: "fast speed", ...config };
+      this.state = { back: false, botplay: false, botsync: false, forth: false, pause: false, resume: true, speed: "fast speed", ...config };
     } else {
-      this.state = { back: false, botplay: false, forth: false, resume: false, speed: "fast speed", ...config };
+      this.state = { back: false, botplay: false, botsync: false, forth: false, resume: false, speed: "fast speed", ...config };
     }
 
     this.renew();
@@ -144,6 +146,7 @@ class Controls {
 
       this.state.back = true;
       this.state.botplay = (this.config.botplay !== false);
+      this.state.botsync = (this.config.botsync !== false);
       this.state.forth = true;
       this.state.pause = false;
       this.state.resume = true;
@@ -159,6 +162,7 @@ class Controls {
 
     this.state.back = false;
     this.state.botplay = false;
+    this.state.botsync = false;
     this.state.forth = false;
     this.state.pause = true;
     this.state.resume = false;

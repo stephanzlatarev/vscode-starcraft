@@ -8,6 +8,8 @@ class Connection {
 
   static CODE_PAUSE = 1;
   static CODE_RESUME = 2;
+  static CODE_START_SYNC = 3;
+  static CODE_STOP_SYNC = 4;
 
   constructor(uri, callback) {
     this.uri = uri;

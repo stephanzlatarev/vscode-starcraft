@@ -12,15 +12,19 @@ class Details {
   tick = this.refresh.bind(this);
 
   start() {
-    this.terminal = vscode.window.createTerminal({
-      name: "Unit",
-      pty: {
-        onDidWrite: this.emitter.event,
-        open: this.attach.bind(this),
-        close: this.detach.bind(this),
-        handleInput: () => {},
-      }
-    });
+    if (this.terminal && !this.terminal.exitStatus) {
+      this.terminal.show();
+    } else {
+      this.terminal = vscode.window.createTerminal({
+        name: "Unit",
+        pty: {
+          onDidWrite: this.emitter.event,
+          open: this.attach.bind(this),
+          close: this.detach.bind(this),
+          handleInput: () => {},
+        }
+      });
+    }
   }
 
   attach() {

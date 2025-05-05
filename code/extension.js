@@ -10,6 +10,7 @@ const game = require("./game.js");
 const minimap = require("./minimap.js");
 const timer = require("./timer.js");
 const BotPlay = require("./botplay.js");
+const BotSync = require("./botsync.js");
 const Checklist = require("./checklist.js");
 const Host = require("./host.js");
 const units = require("./units.js");
@@ -20,6 +21,7 @@ function activate(context) {
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);
 
   BotPlay.setStarter(start);
+  BotSync.setStarter(start);
   files.setExtensionUri(context.extensionUri);
 
   context.subscriptions.push(vscode.commands.registerCommand("starcraft.start", () => {
@@ -69,8 +71,10 @@ function activate(context) {
   timer.start();
 }
 
-async function start(container, document, includeKey, includeChecks) {
-  exitGame();
+async function start(container, document, includeKey, includeChecks, removeRemaining) {
+  if (includeKey !== "start-game") {
+    exitGame();
+  }
 
   if (container && (container !== activeContainer)) {
     activeContainer = container;
@@ -118,6 +122,11 @@ async function start(container, document, includeKey, includeChecks) {
     for (let index = 0; index < checks.length; index++) {
       if (checks[index][0] === includeKey) {
         checks.splice(index, 0, ...includeChecks);
+
+        if (removeRemaining) {
+          checks.length = index + includeChecks.length;
+        }
+
         break;
       }
     }
@@ -139,7 +148,7 @@ async function start(container, document, includeKey, includeChecks) {
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", true);
 
   camera.attach(container);
-  controls.reset(document ? { mouse: false } : { botplay: false, skip: false }, { mode: "select" });
+  controls.reset(document ? { mouse: false } : { botplay: false, botsync: false, skip: false }, { mode: "select" });
   debug.start();
   details.start();
 }
