@@ -1,9 +1,12 @@
 const vscode = require("vscode");
 const game = require("./game.js");
 const timer = require("./timer.js");
+const stats = require("./stats.js");
 const Types = require("./types.js");
 const units = require("./units.js");
 
+const LOOPS_PER_SECOND = 22.4;
+const LOOPS_PER_MINUTE = LOOPS_PER_SECOND * 60;
 const TAB = "  ";
 
 class Details {
@@ -16,7 +19,7 @@ class Details {
       this.terminal.show();
     } else {
       this.terminal = vscode.window.createTerminal({
-        name: "Unit",
+        name: "Stats",
         pty: {
           onDidWrite: this.emitter.event,
           open: this.attach.bind(this),
@@ -58,6 +61,8 @@ class Details {
 
       if (unit) {
         displayUnit(this.emitter, unit, loop);
+      } else {
+        displayStats(this.emitter, stats.get());
       }
 
       this.observation = observation;
@@ -137,8 +142,52 @@ function displayUnit(emitter, unit, loop) {
   emitter.fire(lines.map(line => line.join(" ")).join("\r\n"));
 }
 
+function displayStats(emitter, players) {
+  const loop = players.loop;
+
+  if (loop >= 0) {
+    const player1 = players[1];
+    const player2 = players[2];
+    const lines = [];
+
+    const minutes = Math.floor(loop / LOOPS_PER_MINUTE);
+    const seconds = Math.floor(loop / LOOPS_PER_SECOND) % 60;
+    const mm = (minutes >= 10) ? minutes : "0" + minutes;
+    const ss = (seconds >= 10) ? seconds : "0" + seconds;
+
+    lines.push(`${mm}:${ss} (${loop})`);
+    lines.push("");
+    lines.push(key("Statistics") + cell("Player 1", 1) + cell("Player 2", 2));
+    lines.push("");
+
+    for (const one of Object.keys(player1)) {
+      lines.push(key(one) + cell(player1[one], 1) + cell(player2[one], 2));
+    }
+
+    emitter.fire(lines.join("\r\n"));
+  }
+}
+
 function clearScreen(emitter) {
   emitter.fire("\x1b[3J\x1b[H\x1b[2J");
+}
+
+function key(value) {
+  const text = "                                        " + value + ":";
+
+  return text.substring(text.length - 40);
+}
+
+function cell(value, player) {
+  const text = "          " + value;
+
+  if (player === 1) {
+    return "\x1b[38;2;0;0;160m" + text.substring(text.length - 10) + "\x1b[0m";
+  } else if (player === 2) {
+    return "\x1b[38;2;160;0;0m" + text.substring(text.length - 10) + "\x1b[0m";
+  } else {
+    return text.substring(text.length - 10);
+  }
 }
 
 function bar(lines, key, value, max, color) {

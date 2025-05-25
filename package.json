@@ -58,6 +58,7 @@
   },
   "dependencies": {
     "protobufjs": "^7.4.0",
+    "seek-bzip": "^2.0.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {

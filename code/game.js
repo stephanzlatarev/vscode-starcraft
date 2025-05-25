@@ -2,6 +2,7 @@ const { execSync, spawnSync } = require("node:child_process");
 const Connection = require("./connection.js");
 const files = require("./files.js");
 const history = require("./history.js");
+const stats = require("./stats.js");
 const Types = require("./types.js");
 
 const MODE_GAME = "game";
@@ -141,6 +142,8 @@ class Game {
 
       const replayPath = "/replays/" + replayFileName;
       const replayInfo = await this.request({ replayInfo: { replayPath } });
+
+      await stats.read(replayFileName);
 
       await this.request({
         startReplay: {
@@ -355,6 +358,8 @@ async function stepReplay(game, duration) {
     if (game.mode !== MODE_REPLAY) return;
 
     frame = observation.observation.gameLoop;
+
+    stats.step(frame);
 
     // Only remove the current skip if there was stepSkip before the asynchronous step
     if (skip) game.stepSkip = 0;

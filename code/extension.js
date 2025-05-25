@@ -9,6 +9,7 @@ const docker = require("./docker.js");
 const files = require("./files.js");
 const game = require("./game.js");
 const minimap = require("./minimap.js");
+const stats = require("./stats.js");
 const timer = require("./timer.js");
 const BotPlay = require("./botplay.js");
 const BotSync = require("./botsync.js");
@@ -167,6 +168,7 @@ function exitGame() {
   chat.stop();
   debug.stop();
   details.stop();
+  stats.clear();
 }
 
 function deactivate() {

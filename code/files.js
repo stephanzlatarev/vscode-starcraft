@@ -48,5 +48,9 @@ async function readHtmlFile(page) {
   return html;
 }
 
-module.exports = { copyReplayFile, getFileName, getIconsPath, getReplaysPath, readHtmlFile, setExtensionUri };
+async function readReplayFile(filename) {
+  return await vscode.workspace.fs.readFile(vscode.Uri.joinPath(extensionUri, "replays", filename));
+}
+
+module.exports = { copyReplayFile, getFileName, getIconsPath, getReplaysPath, readHtmlFile, readReplayFile, setExtensionUri };
 
