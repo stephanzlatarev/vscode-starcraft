@@ -32,6 +32,8 @@ class Game {
 
   error = null;
 
+  watching = new Set();
+
   async init() {
     spawnSync("docker", ["run", "-d", "--name", "starcraft",
       "--platform", "linux/amd64",
@@ -84,6 +86,10 @@ class Game {
           if (!oldpos || (loop > oldpos.loop)) {
             this.positions.set(unit.tag, { loop: loop, x: unit.pos.x, y: unit.pos.y });
           }
+        }
+
+        for (const one of this.watching) {
+          one.observe(value);
         }
       } else if (key === "data") {
         Types.read(value);

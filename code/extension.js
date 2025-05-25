@@ -1,6 +1,7 @@
 const vscode = require("vscode");
 const actions = require("./actions.js");
 const camera = require("./camera.js");
+const chat = require("./chat.js");
 const controls = require("./controls.js");
 const debug = require("./debug.js");
 const details = require("./details.js");
@@ -148,6 +149,7 @@ async function start(container, document, includeKey, includeChecks, removeRemai
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", true);
 
   camera.attach(container);
+  chat.start();
   controls.reset(document ? { mouse: false } : { botplay: false, botsync: false, skip: false }, { mode: "select" });
   debug.start();
   details.start();
@@ -157,6 +159,7 @@ function exitGame() {
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);
 
   game.reset();
+  chat.stop();
   debug.stop();
   details.stop();
 }
