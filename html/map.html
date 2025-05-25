@@ -398,7 +398,7 @@ function getHighDefinitionUnitRendering(svg, unit, color, isSelected) {
     const buffprogress = perimeter - buffremain;
 
     if (shape === "circle") {
-      const buffdash = `stroke-width="0.1" stroke-dashoffset="${perimeter / 4 + buffprogress}" stroke-dasharray="${buffremain},${buffprogress}"`;
+      const buffdash = `stroke-width="0.1" stroke-dashoffset="${perimeter / 4}" stroke-dasharray="${buffremain},${buffprogress}"`;
 
       svg.push(`<circle class="buff" cx="${cx}" cy="${cy}" r="${unit.r}" ${buffdash} />`);
     } else {
