@@ -151,8 +151,13 @@ async function start(container, document, includeKey, includeChecks, removeRemai
   camera.attach(container);
   chat.start();
   controls.reset(document ? { mouse: false } : { botplay: false, botsync: false, skip: false }, { mode: "select" });
-  debug.start();
   details.start();
+
+  if (document) {
+    debug.stop();
+  } else {
+    debug.start();
+  }
 }
 
 function exitGame() {

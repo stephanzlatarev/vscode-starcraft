@@ -1,3 +1,4 @@
+const debug = require("./debug.js");
 const files = require("./files.js");
 const game = require("./game.js");
 const Types = require("./types.js");
@@ -22,6 +23,7 @@ class BotPlay {
         checking: this.renderProgress,
         complete: "Set start locations",
       }],
+      ["debug", debug.start.bind(debug), "Prepare debug terminal"],
       ["wait-bot", game.start.bind(game), "Wait for a bot to join the game"],
       ["spawn-units", this.spawnUnits.bind(this), {
         checking: this.renderProgress,
@@ -176,7 +178,7 @@ class BotPlay {
     post(this, "Restore fog of war");
     await game.request({ debug: { debug: [{ gameState: 1 }] } });
     await game.request({ step: { count: 2 } });
-    await game.request({ observation: {} })
+    await game.request({ observation: {} });
   }
 
   static setStarter(starter) {
