@@ -8,6 +8,7 @@ const units = require("./units.js");
 const LOOPS_PER_SECOND = 22.4;
 const LOOPS_PER_MINUTE = LOOPS_PER_SECOND * 60;
 const TAB = "  ";
+const CLEAN_SCREEN = "\r" + Array(100).join("\n") + "\x1b[3J\x1b[H\x1b[2J";
 
 class Details {
 
@@ -56,8 +57,6 @@ class Details {
     if (observation && ((observation !== this.observation) || (this.displayedUnitTag !== this.selectedUnitTag))) {
       const unit = units.get(this.selectedUnitTag);
       const loop = observation.observation.gameLoop;
-
-      clearScreen(this.emitter);
 
       if (unit) {
         displayUnit(this.emitter, unit, loop);
@@ -139,7 +138,7 @@ function displayUnit(emitter, unit, loop) {
   lines.push([]);
   object(lines, TAB, ["Type:"], unitTypeInfo);
 
-  emitter.fire(lines.map(line => line.join(" ")).join("\r\n"));
+  emitter.fire(CLEAN_SCREEN + lines.map(line => line.join(" ")).join("\r\n"));
 }
 
 function displayStats(emitter, players) {
@@ -164,12 +163,8 @@ function displayStats(emitter, players) {
       lines.push(key(one) + cell(player1[one], 1) + cell(player2[one], 2));
     }
 
-    emitter.fire(lines.join("\r\n"));
+    emitter.fire(CLEAN_SCREEN + lines.join("\r\n"));
   }
-}
-
-function clearScreen(emitter) {
-  emitter.fire("\x1b[3J\x1b[H\x1b[2J");
 }
 
 function key(value) {
