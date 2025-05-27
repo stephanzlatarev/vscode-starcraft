@@ -1,6 +1,12 @@
 const game = require("./game.js");
 const Types = require("./types.js");
 
+const RADIUS = {
+   87: 0.5, // Creep Tumor
+  137: 0.5, // Creep Tumor Burrowed
+  138: 0.5, // Creep Tumor Queen
+};
+
 class Units {
 
   get(tag) {
@@ -113,7 +119,7 @@ function getUnitDetailedInfo(unit) {
     x: unit.pos.x,
     y: unit.pos.y,
     z: unit.pos.z,
-    r: unit.radius,
+    r: RADIUS[unit.unitType] || unit.radius,
     product: product,
     progress: unit.buildProgress,
     buff: unit.buffDurationMax ? (unit.buffDurationRemain / unit.buffDurationMax) : 0,
