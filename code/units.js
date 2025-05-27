@@ -85,7 +85,7 @@ class Units {
         }
       }
 
-      units.sort((a, b) => ((a.z - b.z) || (b.owner - a.owner) || (b.r - a.r)));
+      units.sort((a, b) => ((a.z - b.z) || (b.owner - a.owner) || (b.r - a.r) || (a.y + a.r) - (b.y + b.r) || (b.x - a.x)));
 
       return units;
     } else {
