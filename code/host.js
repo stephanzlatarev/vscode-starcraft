@@ -11,18 +11,26 @@ class Host {
     return await files.readHtmlFile("host.html");
   }
 
-  onMessage(message) {
+  async onMessage(message) {
     if (message.type === "host") {
-      game.request({
-        createGame: {
-          localMap: { mapPath: message.map },
-          playerSetup: [
-            { type: 1, race: 4 },
-            { type: 2, race: message.race, difficulty: message.difficulty, playerName: "Computer" },
-          ],
-          realtime: false,
+      try {
+        await game.request({
+          createGame: {
+            localMap: { mapPath: message.map },
+            playerSetup: [
+              { type: 1, race: 4 },
+              { type: 2, race: message.race, difficulty: message.difficulty, playerName: "Computer" },
+            ],
+            realtime: false,
+          }
+        });
+      } catch (error) {
+        if (error.length && (error.indexOf("Already in the process of starting a game") >= 0)) {
+          game.isCreated = true;
+        } else {
+          console.error("Unable to start game.", error);
         }
-      });
+      }
     }
   }
 }
