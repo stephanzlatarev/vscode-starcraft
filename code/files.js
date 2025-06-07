@@ -1,5 +1,6 @@
 const vscode = require("vscode");
-const fetch = require("node-fetch");
+const fetchModule = require("node-fetch");
+const fetch = fetchModule.default || fetchModule;
 
 const htmlFiles = new Map();
 

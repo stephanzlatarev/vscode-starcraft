@@ -1,8 +1,9 @@
 const vscode = require("vscode");
-const fetch = require("node-fetch");
+const fetchModule = require("node-fetch");
 const selection = require("../selection.js");
 const timer = require("../timer.js");
 
+const fetch = fetchModule.default || fetchModule;
 const emitterReload = new vscode.EventEmitter();
 const iconColor = {
   "Win": new vscode.ThemeIcon("testing-passed-icon", new vscode.ThemeColor("testing.iconPassed")),
