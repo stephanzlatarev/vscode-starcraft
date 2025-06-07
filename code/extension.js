@@ -9,6 +9,7 @@ const docker = require("./docker.js");
 const files = require("./files.js");
 const game = require("./game.js");
 const minimap = require("./minimap.js");
+const selection = require("./selection.js");
 const stats = require("./stats.js");
 const timer = require("./timer.js");
 const BotPlay = require("./botplay.js");
@@ -22,6 +23,8 @@ const ArenaMatches = require("./arena/matches.js");
 let activeContainer;
 
 function activate(context) {
+  selection.init(context);
+
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);
 
   BotPlay.setStarter(start);

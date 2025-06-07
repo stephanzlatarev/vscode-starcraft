@@ -3,7 +3,7 @@
 
 <body>
   <div>
-    <input id="bot" type="text" placeholder="Enter bot id" style="width: 100%" />
+    <input id="selection" type="text" placeholder="Enter bot id" style="width: 100%" />
     <div id="details" style="margin-top: 10px; font-weight: bold;"></div>
   </div>
 </body>
@@ -11,14 +11,20 @@
 <script>
 const vscode = acquireVsCodeApi();
 
-document.getElementById("bot").addEventListener("input", (event) => {
+document.getElementById("selection").addEventListener("input", (event) => {
   if (!event.target.value || (event.target.value.length < 3)) return;
 
-  vscode.postMessage({ event: "bot", id: event.target.value });
+  vscode.postMessage({ event: "selection", id: event.target.value });
 });
 
 window.addEventListener("message", function({ data }) {
-  document.getElementById("details").innerHTML = (data && data.id && data.name) ? `${data.name} (${data.id})` : "";
+  if (data && data.id && data.name) {
+    document.getElementById("details").innerHTML = `${data.name} (${data.id})`;
+    vscode.postMessage({ event: "displayed", name: data.name });
+  } else {
+    document.getElementById("details").innerHTML = "";
+    vscode.postMessage({ event: "displayed", name: null });
+  }
 });
 </script>
 

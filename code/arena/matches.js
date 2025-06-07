@@ -40,6 +40,8 @@ class ArenaMatches {
 
       this.displayedBotId = selection.bot.id;
     }
+
+    return true;
   }
 
 }
@@ -52,7 +54,7 @@ async function listMatches() {
   const html = await response.text();
 
   // TODO: Remove this once we can use GraphQL API
-  selection.bot.name = extractBotName(html);
+  selection.setBot(selection.bot.id, extractBotName(html));
 
   const table = extractMatchTable(html);
   const rows = table.match(/<tr[\s\S]*?<\/tr>/g) || [];

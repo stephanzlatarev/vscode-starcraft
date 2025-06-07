@@ -18,20 +18,22 @@ class ArenaBot {
     container.webview.html = await files.readHtmlFile("arena", "bot.html");
     container.webview.onDidReceiveMessage(function(message) {
       switch (message.event) {
-        case "bot": return selection.setBot(message.id);
+        case "selection": return selection.setBot(message.id);
+        case "displayed": return this.displayed = message.name;
       }
     });
   }
 
   refresh() {
     if (this.container && this.container.visible) {
-      if (this.displayed !== selection.bot.name) {
+      if (this.displayed !== selection.bot.name) {;
         this.container.webview.postMessage((selection.bot.id && selection.bot.name) ? selection.bot : null);
-        this.displayed = selection.bot.name;
       }
     } else {
       this.displayed = null;
     }
+
+    return true;
   }
 
 }
