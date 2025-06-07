@@ -16,6 +16,8 @@ const BotSync = require("./botsync.js");
 const Checklist = require("./checklist.js");
 const Host = require("./host.js");
 const units = require("./units.js");
+const ArenaBot = require("./arena/bot.js");
+const ArenaMatches = require("./arena/matches.js");
 
 let activeContainer;
 
@@ -68,6 +70,21 @@ function activate(context) {
         if (message.event === "click") camera.move(message.x, message.y);
       });
     }
+  }));
+
+  // AI Arena
+  context.subscriptions.push(vscode.window.registerWebviewViewProvider("starcraft.arena-bot", {
+    resolveWebviewView(view) {
+      ArenaBot.attach(view);
+    }
+  }));
+
+  context.subscriptions.push(vscode.window.registerTreeDataProvider("starcraft.arena-matches", new ArenaMatches()));
+
+  context.subscriptions.push(vscode.commands.registerCommand("starcraft.arena-replay", async (match) => {
+    if (activeContainer) activeContainer.dispose();
+
+    vscode.commands.executeCommand("vscode.openWith", await files.copyReplayFile(match.replay), "starcraft.replay");
   }));
 
   timer.start();

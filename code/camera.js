@@ -2,6 +2,7 @@ const details = require("./details.js");
 const files = require("./files.js");
 const game = require("./game.js");
 const minimap = require("./minimap.js");
+const selection = require("./selection.js");
 const timer = require("./timer.js");
 const units = require("./units.js");
 
@@ -216,7 +217,7 @@ class Camera {
 
     if (data) {
       if ((!this.viewbox || !this.focus) && this.height && this.width && this.mapbox) {
-        const center = units.list().find(unit => ((unit.owner === 1) && (unit.r > 1)));
+        const center = units.list().find(unit => ((unit.owner === selection.playerId) && (unit.r > 1)));
 
         if (center) {
           this.focus = { width: SPAN_MID, height: SPAN_MID * this.height / this.width };

@@ -2,6 +2,7 @@ const { execSync, spawnSync } = require("node:child_process");
 const Connection = require("./connection.js");
 const files = require("./files.js");
 const history = require("./history.js");
+const selection = require("./selection.js");
 const stats = require("./stats.js");
 const Types = require("./types.js");
 
@@ -143,12 +144,14 @@ class Game {
       const replayPath = "/replays/" + replayFileName;
       const replayInfo = await this.request({ replayInfo: { replayPath } });
 
+      selection.playerId = getSelectedPlayerId(replayFileName);
+
       await stats.read(replayFileName);
 
       await this.request({
         startReplay: {
           replayPath,
-          observedPlayerId: 1,
+          observedPlayerId: selection.playerId,
           realtime: false,
           options: {
             raw: true,
@@ -168,6 +171,8 @@ class Game {
     } else {
       this.mode = MODE_GAME;
       this.disableFog = false;
+
+      selection.playerId = 1;
     }
   }
 
@@ -333,6 +338,15 @@ function addDebugItem(state, type, item) {
       break;
     }
   }
+}
+
+function getSelectedPlayerId(replayFileName) {
+  const split = replayFileName.split("_");
+
+  if (selection.bot.name === split[1]) return 1;
+  if (selection.bot.name === split[2]) return 2;
+
+  return 1;
 }
 
 async function stepReplay(game, duration) {

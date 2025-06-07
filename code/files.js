@@ -1,4 +1,5 @@
 const vscode = require("vscode");
+const fetch = require("node-fetch");
 
 const htmlFiles = new Map();
 
@@ -23,15 +24,41 @@ function getFileName(uri) {
 }
 
 async function copyReplayFile(source) {
-  await vscode.workspace.fs.copy(source, vscode.Uri.joinPath(extensionUri, "replays", getFileName(source)), { overwrite: true });
+  const sourcePath = source.path ? source.path : source;
+  const sourceSplit = sourcePath.split("?")[0].split("/");
+  const fileName = sourceSplit[sourceSplit.length - 1];
+  const target = vscode.Uri.joinPath(extensionUri, "replays", fileName);
+
+  if (await getFileMeta(target)) {
+    // The file is already copied
+    return target;
+  } if (sourcePath.startsWith("http")) {
+    const response = await fetch(sourcePath);
+    const buffer = Buffer.from(await response.arrayBuffer());
+
+    await vscode.workspace.fs.writeFile(target, buffer);
+  } else {
+    await vscode.workspace.fs.copy(source, target, { overwrite: true });
+  }
+
+  return target;
 }
 
-async function readHtmlFile(page) {
-  let html = htmlFiles.get(page);
+async function getFileMeta(uri) {
+  try {
+    return await vscode.workspace.fs.stat(uri);
+  } catch (error) {
+    // The file does not exist
+  }
+}
+
+async function readHtmlFile(...page) {
+  const path = page.join("/");
+  let html = htmlFiles.get(path);
 
   if (!html) {
     try {
-      const file = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(extensionUri, "html", page));
+      const file = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(extensionUri, "html", ...page));
 
       html = file.toString();
     } catch (error) {
@@ -42,7 +69,7 @@ async function readHtmlFile(page) {
       html = "<!DOCTYPE html><html><body>Oops! This view is broken.</body></html>";
     }
 
-    htmlFiles.set(page, html);
+    htmlFiles.set(path, html);
   }
 
   return html;

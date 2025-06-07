@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+  <div>
+    <input id="bot" type="text" placeholder="Enter bot id" style="width: 100%" />
+    <div id="details" style="margin-top: 10px; font-weight: bold;"></div>
+  </div>
+</body>
+
+<script>
+const vscode = acquireVsCodeApi();
+
+document.getElementById("bot").addEventListener("input", (event) => {
+  if (!event.target.value || (event.target.value.length < 3)) return;
+
+  vscode.postMessage({ event: "bot", id: event.target.value });
+});
+
+window.addEventListener("message", function({ data }) {
+  document.getElementById("details").innerHTML = (data && data.id && data.name) ? `${data.name} (${data.id})` : "";
+});
+</script>
+
+</html>

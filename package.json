@@ -16,6 +16,10 @@
       {
         "command": "starcraft.start",
         "title": "Start StarCraft II for an AI bot"
+      },
+      {
+        "command": "starcraft.arena-replay",
+        "title": "Start replay from AI Arena"
       }
     ],
     "customEditors": [
@@ -31,6 +35,17 @@
       }
     ],
     "views": {
+      "aiarena": [
+        {
+          "id": "starcraft.arena-bot",
+          "type": "webview",
+          "name": "Arena bot"
+        },
+        {
+          "id": "starcraft.arena-matches",
+          "name": "Arena matches"
+        }
+      ],
       "explorer": [
         {
           "id": "starcraft.actions",
@@ -51,12 +66,22 @@
           "when": "starcraft.isInGame"
         }
       ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "aiarena",
+          "title": "AI Arena",
+          "icon": "./icons/AiArena.png"
+        }
+      ]
     }
   },
   "scripts": {
     "package": "webpack --mode production --devtool hidden-source-map"
   },
   "dependencies": {
+    "node-fetch": "^2.6.7",
     "protobufjs": "^7.4.0",
     "seek-bzip": "^2.0.0",
     "ws": "^8.18.0"
