@@ -44,6 +44,10 @@
         {
           "id": "starcraft.arena-matches",
           "name": "Arena matches"
+        },
+        {
+          "id": "starcraft.arena-maps",
+          "name": "Arena maps"
         }
       ],
       "explorer": [

@@ -6,13 +6,17 @@ class Host {
   complete = "Create game";
 
   async checking(container) {
+    this.webview = container.webview;
+
     container.webview.onDidReceiveMessage(this.onMessage.bind(this));
 
     return await files.readHtmlFile("host.html");
   }
 
   async onMessage(message) {
-    if (message.type === "host") {
+    if (message.type === "maps") {
+      this.webview.postMessage({ type: "maps", maps: await files.listMaps() });
+    } else if (message.type === "host") {
       try {
         await game.request({
           createGame: {

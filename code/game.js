@@ -41,6 +41,7 @@ class Game {
       "--platform", "linux/amd64",
       "-p", "5000:5000", "-p", "5001:5001",
       "-v", files.getReplaysPath().split(":").join("") + ":/replays",
+      "-v", files.getMapsPath().split(":").join("") + ":/StarCraftII/Maps",
       "stephanzlatarev/starcraft"
     ]);
   }

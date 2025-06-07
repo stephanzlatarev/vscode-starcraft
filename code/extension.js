@@ -18,6 +18,7 @@ const Checklist = require("./checklist.js");
 const Host = require("./host.js");
 const units = require("./units.js");
 const ArenaBot = require("./arena/bot.js");
+const ArenaMaps = require("./arena/maps.js");
 const ArenaMatches = require("./arena/matches.js");
 
 let activeContainer;
@@ -82,6 +83,7 @@ function activate(context) {
     }
   }));
 
+  context.subscriptions.push(vscode.window.registerTreeDataProvider("starcraft.arena-maps", new ArenaMaps()));
   context.subscriptions.push(vscode.window.registerTreeDataProvider("starcraft.arena-matches", new ArenaMatches()));
 
   context.subscriptions.push(vscode.commands.registerCommand("starcraft.arena-replay", async (match) => {

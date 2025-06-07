@@ -14,6 +14,10 @@ function getIconsPath(webview) {
   return webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "icons")) + "/";
 }
 
+function getMapsPath() {
+  return vscode.Uri.joinPath(extensionUri, "maps").path;
+}
+
 function getReplaysPath() {
   return vscode.Uri.joinPath(extensionUri, "replays").path;
 }
@@ -24,16 +28,24 @@ function getFileName(uri) {
   return path[path.length - 1];
 }
 
+async function copyMapFile(source) {
+  return copyFileToDirectory(source, "maps");
+}
+
 async function copyReplayFile(source) {
+  return copyFileToDirectory(source, "replays");
+}
+
+async function copyFileToDirectory(source, directory) {
   const sourcePath = source.path ? source.path : source;
   const sourceSplit = sourcePath.split("?")[0].split("/");
   const fileName = sourceSplit[sourceSplit.length - 1];
-  const target = vscode.Uri.joinPath(extensionUri, "replays", fileName);
+  const target = vscode.Uri.joinPath(extensionUri, directory, fileName);
 
   if (await getFileMeta(target)) {
     // The file is already copied
     return target;
-  } if (sourcePath.startsWith("http")) {
+  } else if (sourcePath.startsWith("http")) {
     const response = await fetch(sourcePath);
     const buffer = Buffer.from(await response.arrayBuffer());
 
@@ -48,8 +60,19 @@ async function copyReplayFile(source) {
 async function getFileMeta(uri) {
   try {
     return await vscode.workspace.fs.stat(uri);
-  } catch (error) {
+  } catch (_) {
     // The file does not exist
+  }
+}
+
+async function listMaps() {
+  try {
+    const files = await vscode.workspace.fs.readDirectory(vscode.Uri.joinPath(extensionUri, "maps"));
+
+    return files.map(([name]) => name);
+  } catch (_) {
+    // The directory does not exist
+    return [];
   }
 }
 
@@ -80,5 +103,8 @@ async function readReplayFile(filename) {
   return await vscode.workspace.fs.readFile(vscode.Uri.joinPath(extensionUri, "replays", filename));
 }
 
-module.exports = { copyReplayFile, getFileName, getIconsPath, getReplaysPath, readHtmlFile, readReplayFile, setExtensionUri };
+module.exports = {
+  copyReplayFile, getFileName, getIconsPath, getReplaysPath, readHtmlFile, readReplayFile, setExtensionUri,
+  copyMapFile, getMapsPath, listMaps
+};
 

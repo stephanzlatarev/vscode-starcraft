@@ -26,14 +26,6 @@ There are no known issues when running on Windows with Docker Desktop.
 On Mac with Apple silicon works with Docker VMM (See Docker Desktop > Settings > General > Virtual Machine Options)
 but doesn't work with Apple Virtualization framework using Rosetta for emulation.
 
-Only the following maps can be used for playing the game or viewing replays:
-* AbyssalReefAIE
-* AcropolisAIE
-* AutomatonAIE
-* EphemeronAIE
-* InterloperAIE
-* ThunderbirdAIE
-
 The following ports must be available on the host machine:
 * 5000 - This is the port for your bot to connect to.
 * 5001 - This port is used to monitor the game events exchanged between your bot and StarCraft II.

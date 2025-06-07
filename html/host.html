@@ -22,12 +22,6 @@
   </select>
   on
   <select id="map">
-    <option value="AbyssalReefAIE.SC2Map" selected="true">Abyssal Reef AIE</option>
-    <option value="AcropolisAIE.SC2Map">Acropolis AIE</option>
-    <option value="AutomatonAIE.SC2Map">Automaton AIE</option>
-    <option value="EphemeronAIE.SC2Map">Ephemeron AIE</option>
-    <option value="InterloperAIE.SC2Map">Interloper AIE</option>
-    <option value="ThunderbirdAIE.SC2Map">Thunderbird AIE</option>
   </select>
 
   <button id="save" type="button">Start</button>
@@ -35,6 +29,14 @@
 
 <script>
   const vscode = acquireVsCodeApi();
+
+  function prettyMapName(name) {
+    const aie = name.endsWith("AIE.SC2Map");
+    const raw = aie ? name.replace("AIE.SC2Map", "") : name.replace(".SC2Map", "");
+
+    // Insert spaces before uppercase letters (except the first letter)
+    return raw.replace(/([a-z])([A-Z])/g, '$1 $2') + (aie ? " AIE" : "");
+  }
 
   document.getElementById("save").addEventListener("click", function(event) {
     vscode.postMessage({
@@ -44,5 +46,25 @@
       difficulty: Number(document.getElementById("difficulty").value),
     });
   });
+
+  window.addEventListener("message", event => {
+    const message = event.data;
+
+    if (message.type === "maps") {
+      const select = document.getElementById("map");
+      select.innerHTML = "";
+
+      for (const name of message.maps) {
+        const option = document.createElement("option");
+
+        option.value = name;
+        option.textContent = prettyMapName(name);
+
+        select.appendChild(option);
+      }
+    }
+  });
+
+  vscode.postMessage({ type: "maps" });
 </script>
 <!-- Fragment end -->
