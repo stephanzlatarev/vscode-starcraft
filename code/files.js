@@ -29,14 +29,14 @@ function getFileName(uri) {
 }
 
 async function copyMapFile(source) {
-  return copyFileToDirectory(source, "maps");
+  return copyMpqFileToDirectory(source, "maps");
 }
 
 async function copyReplayFile(source) {
-  return copyFileToDirectory(source, "replays");
+  return copyMpqFileToDirectory(source, "replays");
 }
 
-async function copyFileToDirectory(source, directory) {
+async function copyMpqFileToDirectory(source, directory) {
   const sourcePath = source.path ? source.path : source;
   const sourceSplit = sourcePath.split("?")[0].split("/");
   const fileName = sourceSplit[sourceSplit.length - 1];
@@ -49,7 +49,12 @@ async function copyFileToDirectory(source, directory) {
     const response = await fetch(sourcePath);
     const buffer = Buffer.from(await response.arrayBuffer());
 
-    await vscode.workspace.fs.writeFile(target, buffer);
+    if ((buffer[0] === 0x4d) && (buffer[1] === 0x50) && (buffer[2] === 0x51)) {
+      // The file is an MPQ archive
+      await vscode.workspace.fs.writeFile(target, buffer);
+    } else {
+      throw new Error(`File ${fileName} is not a valid MPQ archive.`);
+    }
   } else {
     await vscode.workspace.fs.copy(source, target, { overwrite: true });
   }
