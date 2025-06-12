@@ -21,13 +21,17 @@ class ArenaBot {
         case "selection": return selection.setBot(message.id);
         case "displayed": return this.displayed = message.name;
       }
-    });
+    }.bind(this));
+
+    this.container.webview.postMessage({ bots: selection.favoriteBots });
   }
 
   refresh() {
     if (this.container && this.container.visible) {
-      if (this.displayed !== selection.bot.name) {;
-        this.container.webview.postMessage((selection.bot.id && selection.bot.name) ? selection.bot : null);
+      if (selection.bot.id && selection.bot.name && (this.displayed !== selection.bot.name)) {
+        selection.addFavoriteBot(selection.bot.id, selection.bot.name);
+        this.container.webview.postMessage({ bots: selection.favoriteBots });
+        this.container.webview.postMessage(selection.bot);
       }
     } else {
       this.displayed = null;

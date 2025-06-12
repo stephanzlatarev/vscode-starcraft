@@ -6,6 +6,7 @@ class Selection {
     name: null,
   };
 
+  favoriteBots = [];
   playerId = 1;
 
   init(context) {
@@ -14,13 +15,23 @@ class Selection {
       id: 0,
       name: null,
     };
+    this.favoriteBots = context.globalState.get("starcraft.selection.favoriteBots") || [];
+  }
+
+  addFavoriteBot(id, name) {
+    if (!this.favoriteBots.some(bot => (bot.id === id))) {
+      this.favoriteBots.push({ id, name });
+      this.context.globalState.update("starcraft.selection.favoriteBots", this.favoriteBots);
+    }
   }
 
   setBot(id, name) {
-    this.bot.id = id;
-    this.bot.name = name;
+    if ((this.bot.id !== id) || (this.bot.name !== name)) {
+      this.bot.id = id;
+      this.bot.name = name;
 
-    this.context.globalState.update("starcraft.selection.bot", this.bot);
+      this.context.globalState.update("starcraft.selection.bot", this.bot);
+    }
   }
 
 }

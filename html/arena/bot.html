@@ -3,7 +3,11 @@
 
 <body>
   <div>
-    <input id="selection" type="text" placeholder="Enter bot id" style="width: 100%" />
+    <input id="selection" list="botlist" placeholder="Enter bot id" style="width: 100%" autocomplete="off" />
+    <datalist id="botlist">
+      <option value="518">norman (518)</option>
+    </datalist>
+    <div id="loading" style="margin-top: 10px; font-style: italic; display: none;">Loading...</div>
     <div id="details" style="margin-top: 10px; font-weight: bold;"></div>
   </div>
 </body>
@@ -11,19 +15,48 @@
 <script>
 const vscode = acquireVsCodeApi();
 
-document.getElementById("selection").addEventListener("input", (event) => {
-  if (!event.target.value || (event.target.value.length < 3)) return;
+const input = document.getElementById("selection");
+const botlist = document.getElementById("botlist");
+const loading = document.getElementById("loading");
+const details = document.getElementById("details");
 
-  vscode.postMessage({ event: "selection", id: event.target.value });
+let displayedBotId;
+
+input.addEventListener("input", (event) => {
+  const value = event.target.value;
+
+  if (!value || value.length < 3) return;
+  if (value == displayedBotId) return;
+
+  loading.style.display = "block";
+  details.innerHTML = "";
+  vscode.postMessage({ event: "selection", id: value });
 });
-
+input.addEventListener("change", () => {
+  input.value = "";
+});
+input.addEventListener("blur", () => {
+  input.value = "";
+});
 window.addEventListener("message", function({ data }) {
-  if (data && data.id && data.name) {
-    document.getElementById("details").innerHTML = `${data.name} (${data.id})`;
+  if (!data) return;
+
+  if (data.bots) {
+    botlist.innerHTML = "";
+    data.bots.forEach(bot => {
+      const option = document.createElement("option");
+      option.value = bot.id;
+      option.label = bot.name ? `${bot.name} (${bot.id})` : bot.id;
+      botlist.appendChild(option);
+    });
+  } else if (data.id && data.name) {
+    displayedBotId = data.id;
+    loading.style.display = "none";
+    details.innerHTML = `${data.name} (${data.id})`;
     vscode.postMessage({ event: "displayed", name: data.name });
-  } else {
-    document.getElementById("details").innerHTML = "";
-    vscode.postMessage({ event: "displayed", name: null });
+  } else if (data && data.id) {
+    loading.style.display = "block";
+    details.innerHTML = "";
   }
 });
 </script>
