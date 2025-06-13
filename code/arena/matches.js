@@ -32,11 +32,13 @@ class ArenaMatches {
   }
 
   async getChildren(match) {
+    this.nextDownloadTime = Date.now() + 1000 * 60; // Refresh every minute
+
     return match ? [] : await listMatches();
   }
 
   refresh() {
-    if (selection.bot.id && (this.displayedBotId !== selection.bot.id)) {
+    if (selection.bot.id && ((this.displayedBotId !== selection.bot.id) || (Date.now() > this.nextDownloadTime))) {
       emitterReload.fire();
 
       this.displayedBotId = selection.bot.id;
