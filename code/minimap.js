@@ -5,10 +5,11 @@ const units = require("./units.js");
 
 class MiniMap {
 
+  containers = [];
   tick = this.render.bind(this);
 
   async attach(container) {
-    this.container = container;
+    this.containers.push(container);
 
     container.webview.options = { enableScripts: true };
     container.webview.html = await files.readHtmlFile("map.html");
@@ -19,6 +20,7 @@ class MiniMap {
   }
 
   detach() {
+    this.containers = [];
     this.container = null;
     this.gameInfo = null;
     this.observation = null;
@@ -29,6 +31,7 @@ class MiniMap {
 
   renew() {
     // Clear cached data so that it's posted again
+    this.container = null;
     this.gameInfo = null;
     this.observation = null;
     this.debugShapes = null;
@@ -39,13 +42,17 @@ class MiniMap {
   setFocus(focus) {
     this.focus = focus;
 
-    if (this.container && this.container.visible) {
-      this.container.webview.postMessage({ type: "focus", focus });
+    for (const container of this.containers) {
+      if (container.visible) {
+        container.webview.postMessage({ type: "focus", focus });
+      }
     }
   }
 
   render() {
-    if (!this.container || !this.container.visible) return;
+    const container = this.containers.find(one => one.visible);
+
+    if (!container || !container.visible) return;
     
     const gameInfo = game.get("gameInfo");
     const observation = game.get("observation");
@@ -53,11 +60,11 @@ class MiniMap {
 
     const data = { showZones: true, focus: this.focus };
 
-    if (gameInfo && (gameInfo !== this.gameInfo)) {
+    if (gameInfo && ((gameInfo !== this.gameInfo) || (container !== this.container))) {
       const { p0, p1 } = gameInfo.startRaw.playableArea;
       const { placementGrid, pathingGrid } = gameInfo.startRaw;
 
-      this.container.title = gameInfo.mapName;
+      container.title = gameInfo.mapName;
 
       data.viewbox = { left: p0.x, top: p0.y, width: p1.x - p0.x, height: p1.y - p0.y };
       data.mapbox = { minx: p0.x, maxx: p1.x, miny: p0.y, maxy: p1.y };
@@ -66,7 +73,7 @@ class MiniMap {
       this.gameInfo = gameInfo;
     }
 
-    if (observation && (observation !== this.observation)) {
+    if (observation && ((observation !== this.observation) || (container !== this.container))) {
       data.units = units.list();
       data.creep = observation.observation.rawData.mapState.creep;
       data.fog = observation.observation.rawData.mapState.visibility;
@@ -74,23 +81,21 @@ class MiniMap {
       this.observation = observation;
     }
 
-    if (debugShapes && (debugShapes !== this.debugShapes)) {
+    if (debugShapes && ((debugShapes !== this.debugShapes) || (container !== this.container))) {
       data.shapes = debugShapes;
 
       this.debugShapes = debugShapes;
     }
 
     if (data.viewbox || data.units || data.shapes) {
-      this.container.webview.postMessage({ type: "render", data });
+      container.webview.postMessage({ type: "render", data });
+
+      this.container = container;
 
       return true;
     }
   }
 
-}
-
-function debugColor(rgb) {
-  return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
 }
 
 module.exports = new MiniMap();

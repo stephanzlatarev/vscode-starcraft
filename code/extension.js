@@ -92,6 +92,22 @@ function activate(context) {
     vscode.commands.executeCommand("vscode.openWith", await files.copyReplayFile(match.replay), "starcraft.replay");
   }));
 
+  context.subscriptions.push(vscode.window.registerWebviewViewProvider("starcraft.arena-controls", {
+    resolveWebviewView(view) {
+      controls.attach(view);
+    }
+  }));
+
+  context.subscriptions.push(vscode.window.registerWebviewViewProvider("starcraft.arena-minimap", {
+    resolveWebviewView(view) {
+      minimap.attach(view);
+
+      view.webview.onDidReceiveMessage(function(message) {
+        if (message.event === "click") camera.move(message.x, message.y);
+      });
+    }
+  }));
+
   timer.start();
 }
 

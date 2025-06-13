@@ -47,7 +47,21 @@
         },
         {
           "id": "starcraft.arena-maps",
-          "name": "Arena maps"
+          "name": "Arena maps",
+          "when": "!starcraft.isInGame",
+          "collapsed": true
+        },
+        {
+          "id": "starcraft.arena-controls",
+          "type": "webview",
+          "name": "Game Controls",
+          "when": "starcraft.isInGame"
+        },
+        {
+          "id": "starcraft.arena-minimap",
+          "type": "webview",
+          "name": "Minimap",
+          "when": "starcraft.isInGame"
         }
       ],
       "explorer": [

@@ -9,11 +9,12 @@ const units = require("./units.js");
 
 class Controls {
 
+  containers = [];
   action = { mode: "select" };
   tick = this.refresh.bind(this);
 
   async attach(container) {
-    this.container = container;
+    this.containers.push(container);
 
     container.webview.options = { enableScripts: true };
     container.webview.html = await files.readHtmlFile("controls.html");
@@ -40,12 +41,14 @@ class Controls {
   }
 
   detach() {
+    this.containers = [];
     this.container = null;
     this.observation = null;
   }
 
   renew() {
     // Clear cached data so that it's posted again
+    this.container = null;
     this.observation = null;
     this.activeAction = null;
     this.activeState = null;
@@ -53,11 +56,13 @@ class Controls {
   }
 
   refresh() {
-    if (!this.container || !this.container.visible) return;
+    const container = this.containers.find(one => one.visible);
+
+    if (!container || !container.visible) return;
 
     const observation = game.get("observation");
 
-    if (observation && (observation !== this.observation)) {
+    if (observation && ((observation !== this.observation) || (container !== this.container))) {
       post(this, {
         type: "observation",
         loop: observation.observation.gameLoop,
@@ -67,7 +72,7 @@ class Controls {
       });
     }
 
-    if ((this.activeAction !== this.action) || (this.activeState !== this.state)) {
+    if ((this.activeAction !== this.action) || (this.activeState !== this.state) || (container !== this.container)) {
       post(this,
         { type: "controls", config: this.state, action: this.action },
         () => {
@@ -77,7 +82,7 @@ class Controls {
       );
     }
 
-    if (this.activeTypes !== Types.units.size) {
+    if ((this.activeTypes !== Types.units.size) || (container !== this.container)) {
       const types = [];
 
       for (const [id, type] of Types.units) {
@@ -94,6 +99,8 @@ class Controls {
         }
       );
     }
+
+    this.container = container;
   }
 
   reset(config, action) {
