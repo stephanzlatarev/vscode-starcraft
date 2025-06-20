@@ -1,3 +1,4 @@
+const vscode = require("vscode");
 const { execSync, spawnSync } = require("node:child_process");
 const Connection = require("./connection.js");
 const files = require("./files.js");
@@ -15,6 +16,9 @@ let spawnIds = 1;
 class Game {
 
   game = new Connection("ws://127.0.0.1:5001/sc2api", this.onEvent.bind(this));
+  portForBot;
+  portToWatch;
+
   state = new Map();
   positions = new Map();
   spawning = new Map();
@@ -37,13 +41,30 @@ class Game {
   watching = new Set();
 
   async init() {
+    const settings = vscode.workspace.getConfiguration("starcraft");
+    const portForBot = settings.get("portForBot");
+    const portToWatch = settings.get("portToWatch");
+
+    if (this.game && ((this.portForBot !== portForBot) || (this.portToWatch !== portToWatch))) {
+      this.game.close();
+      this.game = null;
+
+      execSync("docker rm -f starcraft");
+    }
+
     spawnSync("docker", ["run", "-d", "--name", "starcraft",
       "--platform", "linux/amd64",
-      "-p", "5000:5000", "-p", "5001:5001",
+      "-p", `${portForBot}:5000`, "-p", `${portToWatch}:5001`,
       "-v", files.getReplaysPath().split(":").join("") + ":/replays",
       "-v", files.getMapsPath().split(":").join("") + ":/StarCraftII/Maps",
       "stephanzlatarev/starcraft"
     ]);
+
+    if (!this.game) {
+      this.game = new Connection(`ws://127.0.0.1:${portToWatch}/sc2api`, this.onEvent.bind(this));
+      this.portForBot = portForBot;
+      this.portToWatch = portToWatch;
+    }
   }
 
   async toggleFog() {

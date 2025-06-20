@@ -23,3 +23,10 @@ The extension is also available for download in
 [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=stephanzlatarev.vscode-starcraft),
 [Open VSX Registry](https://open-vsx.org/extension/stephanzlatarev/vscode-starcraft)
 and [GitHub](https://github.com/stephanzlatarev/vscode-starcraft/releases).
+
+# Change game ports if necessary
+
+Two network ports on the local host are used for running and watching the game.
+You can change the defaults - `5000` and `5001` - if these conflict with other software on your machine.
+
+![Port settings](install-ports.png)

@@ -146,6 +146,7 @@ async function start(container, document, includeKey, includeChecks, removeRemai
     ["connect-game",  () => game.connect(), "Connect to StarCraft II"],
   ];
 
+  const portForBot = vscode.workspace.getConfiguration("starcraft").get("portForBot");
   const checks = document ?
   [
     ...prerequisites,
@@ -153,7 +154,7 @@ async function start(container, document, includeKey, includeChecks, removeRemai
     ["start-replay", () => game.play(files.getFileName(document.uri)), "Start the replay"],
   ] : [
     ...prerequisites,
-    ["start-api", () => game.play(), "Open StarCraft II API endpoint at ws://127.0.0.1:5000/sc2api"],
+    ["start-api", () => game.play(), `Open StarCraft II API endpoint at ws://127.0.0.1:${portForBot}/sc2api`],
     ["host-game", () => game.host(), new Host()],
     ["wait-bot",  () => game.start(), "Wait for a bot to join the game"],
   ];

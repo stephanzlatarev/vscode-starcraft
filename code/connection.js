@@ -92,6 +92,12 @@ class Connection {
     }
   }
 
+  close() {
+    if (this.socket) {
+      this.socket.close();
+      this.socket = null;
+    }
+  }
 }
 
 function sleep(millis) {

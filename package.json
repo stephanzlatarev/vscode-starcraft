@@ -12,6 +12,26 @@
   "activationEvents": [],
   "main": "./code/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "StarCraft II for AI",
+      "type": "object",
+      "properties": {
+        "starcraft.portForBot": {
+          "description": "StarCraft II API endpoint port for your bot to connect to",
+          "type": "number",
+          "minimum": 1024,
+          "default": 5000,
+          "maximum": 49151
+        },
+        "starcraft.portToWatch": {
+          "description": "StarCraft II API endpoint port for watching the game",
+          "type": "number",
+          "minimum": 1024,
+          "default": 5001,
+          "maximum": 49151
+        }
+      }
+    },
     "commands": [
       {
         "command": "starcraft.start",
