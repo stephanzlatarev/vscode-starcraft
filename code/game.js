@@ -48,17 +48,27 @@ class Game {
     if (this.game && ((this.portForBot !== portForBot) || (this.portToWatch !== portToWatch))) {
       this.game.close();
       this.game = null;
-
-      execSync("docker rm -f starcraft");
     }
 
-    spawnSync("docker", ["run", "-d", "--name", "starcraft",
+    execSync("docker rm -f starcraft");
+
+    const result = spawnSync("docker", ["run", "-d", "--name", "starcraft",
       "--platform", "linux/amd64",
       "-p", `${portForBot}:5000`, "-p", `${portToWatch}:5001`,
       "-v", files.getReplaysPath().split(":").join("") + ":/replays",
       "-v", files.getMapsPath().split(":").join("") + ":/StarCraftII/Maps",
       "stephanzlatarev/starcraft"
     ]);
+
+    if (result.status) {
+      const errorMessage = result.stderr.toString().trim();
+
+      if (errorMessage.indexOf("port is already allocated") >= 0) {
+        throw new Error(`Ports are already taken. Change "Port For Bot" and "Port To Watch" in Settings!`);
+      } else {
+        throw new Error(errorMessage);
+      }
+    }
 
     if (!this.game) {
       this.game = new Connection(`ws://127.0.0.1:${portToWatch}/sc2api`, this.onEvent.bind(this));
