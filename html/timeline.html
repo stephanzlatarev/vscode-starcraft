@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+  <div id="timeline" style="width: 100%"></div>
+</body>
+
+<script>
+
+const vscode = acquireVsCodeApi();
+
+let timeline = null;
+
+vscode.postMessage({ event: "resize", width: window.innerWidth, height: window.innerHeight });
+
+window.addEventListener("resize", function(event) {
+  vscode.postMessage({ event: "resize", width: window.innerWidth, height: window.innerHeight });
+}, true);
+
+window.addEventListener("message", function({ data }) {
+  if ((data.type === "timeline") && (data.timeline !== timeline)) {
+    document.getElementById("timeline").innerHTML = data.timeline;
+    timeline = data.timeline;
+  }
+});
+
+  </script>
+
+</html>

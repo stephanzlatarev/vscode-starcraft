@@ -16,6 +16,7 @@ const BotPlay = require("./botplay.js");
 const BotSync = require("./botsync.js");
 const Checklist = require("./checklist.js");
 const Host = require("./host.js");
+const Timeline = require("./timeline.js");
 const units = require("./units.js");
 const ArenaBot = require("./arena/bot.js");
 const ArenaMaps = require("./arena/maps.js");
@@ -47,6 +48,16 @@ function activate(context) {
       if (activeContainer) activeContainer.dispose();
 
       start(container, document);
+    },
+  }));
+
+  context.subscriptions.push(vscode.window.registerCustomEditorProvider("starcraft.timeline", {
+    openCustomDocument(uri) {
+      return { uri, dispose: function() {} };
+    },
+
+    resolveCustomEditor(document, container) {
+      new Timeline().attach(container, document);
     },
   }));
 
