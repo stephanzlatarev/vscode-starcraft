@@ -29,6 +29,10 @@
           "minimum": 1024,
           "default": 5001,
           "maximum": 49151
+        },
+        "starcraft.arenaApiToken": {
+          "description": "API token for the AI Arena. Get it from https://aiarena.net/profile/token/",
+          "type": "string"
         }
       }
     },
@@ -63,7 +67,8 @@
         },
         {
           "id": "starcraft.arena-matches",
-          "name": "Arena matches"
+          "name": "Arena matches",
+          "when": "starcraft.hasArenaApiToken"
         },
         {
           "id": "starcraft.arena-maps",

@@ -52,8 +52,7 @@ window.addEventListener("message", function({ data }) {
   } else if (data.id && data.name) {
     displayedBotId = data.id;
     loading.style.display = "none";
-    details.innerHTML = `${data.name} (${data.id})`;
-    vscode.postMessage({ event: "displayed", name: data.name });
+    details.innerHTML = `${data.name} (${data.id}) ${data.race}`;
   } else if (data && data.id) {
     loading.style.display = "block";
     details.innerHTML = "";

@@ -19,7 +19,7 @@ class Selection {
   }
 
   addFavoriteBot(id, name) {
-    if (!this.favoriteBots.some(bot => (bot.id === id))) {
+    if (id && name && !this.favoriteBots.some(bot => (bot.id === id))) {
       this.favoriteBots.push({ id, name });
       this.context.globalState.update("starcraft.selection.favoriteBots", this.favoriteBots);
     }
@@ -32,6 +32,8 @@ class Selection {
 
       this.context.globalState.update("starcraft.selection.bot", this.bot);
     }
+
+    this.addFavoriteBot(id, name);
   }
 
 }

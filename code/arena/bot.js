@@ -1,6 +1,7 @@
 const files = require("../files.js");
 const selection = require("../selection.js");
 const timer = require("../timer.js");
+const ArenaApi = require("./api.js");
 
 class ArenaBot {
 
@@ -17,21 +18,28 @@ class ArenaBot {
     container.webview.options = { enableScripts: true };
     container.webview.html = await files.readHtmlFile("arena", "bot.html");
     container.webview.onDidReceiveMessage(function(message) {
-      switch (message.event) {
-        case "selection": return selection.setBot(message.id);
-        case "displayed": return this.displayed = message.name;
+      if (message.event === "selection") {
+        selection.setBot(message.id);
       }
     }.bind(this));
 
     this.container.webview.postMessage({ bots: selection.favoriteBots });
   }
 
-  refresh() {
+  async refresh() {
     if (this.container && this.container.visible) {
-      if (selection.bot.id && selection.bot.name && (this.displayed !== selection.bot.name)) {
-        selection.addFavoriteBot(selection.bot.id, selection.bot.name);
+      if (selection.bot.id && (this.displayed !== selection.bot.id)) {
+        this.displayed = selection.bot.id;
+
         this.container.webview.postMessage({ bots: selection.favoriteBots });
-        this.container.webview.postMessage(selection.bot);
+
+        const botInfo = await ArenaApi.getBotInfo(selection.bot.id);
+
+        if (botInfo) {
+          this.container.webview.postMessage(botInfo);
+        } else {
+          this.container.webview.postMessage({ id: selection.bot.id });
+        }
       }
     } else {
       this.displayed = null;
