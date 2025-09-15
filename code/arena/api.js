@@ -52,11 +52,20 @@ class ArenaApi {
     })).reverse();
   }
 
+  async listActiveCompetitionMaps() {
+    const competitions = await call("competitions/?status=open", { results: [] }, false);
+    const activeCompetitionIds = competitions.results.map(comp => comp.id);
+
+    const query = activeCompetitionIds.map(id => `competitions=${id}`).join("&");
+    const maps = await call(`maps/?${query}`, { results: [] }, false);
+    return maps.results.map(({ file }) => file);
+  }
+
 }
 
-async function call(endpoint, defaultValue) {
-  const arenaApiToken = await getArenaApiToken();
-  if (!arenaApiToken) return;
+async function call(endpoint, defaultValue, shouldRequestToken = true) {
+  const arenaApiToken = await getArenaApiToken(shouldRequestToken);
+  if (!arenaApiToken) return defaultValue;
 
   const response = await fetch(`https://aiarena.net/api/${endpoint}`, {
     headers: {
@@ -72,12 +81,12 @@ async function call(endpoint, defaultValue) {
   }
 }
 
-function getArenaApiToken() {
+function getArenaApiToken(shouldRequestToken) {
   const arenaApiToken =  vscode.workspace.getConfiguration("starcraft").get("arenaApiToken");
 
   vscode.commands.executeCommand("setContext", "starcraft.hasArenaApiToken", !!arenaApiToken);
 
-  if (!arenaApiToken) {
+  if (!arenaApiToken && shouldRequestToken) {
     requestArenaApiToken();
   }
 
@@ -95,7 +104,7 @@ async function requestArenaApiToken() {
   await new Promise(resolve => setTimeout(resolve, 3000));
   isRequestingToken = false;
 
-  getArenaApiToken();
+  getArenaApiToken(true);
 }
 
 module.exports = new ArenaApi();

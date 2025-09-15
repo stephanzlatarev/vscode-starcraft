@@ -1,5 +1,6 @@
 const vscode = require("vscode");
 const files = require("../files.js");
+const ArenaApi = require("./api.js");
 
 const MAP_URL = "https://stephanzlatarev.github.io/vscode-starcraft/maps/";
 const MAPS = [
@@ -40,6 +41,13 @@ class ArenaMaps {
 async function init() {
   for (const map of MAPS) {
     await files.copyMapFile(`${MAP_URL}/${map}`);
+
+    emitterReload.fire();
+  }
+
+  const activeCompetitionMaps = await ArenaApi.listActiveCompetitionMaps();
+  for (const map of activeCompetitionMaps) {
+    await files.copyMapFile(map);
 
     emitterReload.fire();
   }
