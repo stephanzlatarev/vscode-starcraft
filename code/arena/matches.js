@@ -27,6 +27,7 @@ class ArenaMatches {
     const item = new vscode.TreeItem(formattedTime + " vs " + match.opponent + getMatchDuration(match));
 
     item.iconPath = ICON_COLOR[match.result] || ICON_COLOR["Tie"];
+    item.contextValue = "arenaMatch";
 
     if (match.replay && match.replay.length) {
       item.command = { command: "starcraft.arena-replay", title: "Arena replay", arguments: [match] };

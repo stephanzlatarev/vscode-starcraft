@@ -1,4 +1,5 @@
 const vscode = require("vscode");
+const yauzl = require("yauzl");
 const fetchModule = require("node-fetch");
 const fetch = fetchModule.default || fetchModule;
 
@@ -61,6 +62,46 @@ class ArenaApi {
     return maps.results.map(({ file }) => file);
   }
 
+  async getLogs(botId, matchId) {
+    const participations = await call(`match-participations/?bot=${botId}&match=${matchId}`, { results: [] });
+    const participationId = (participations.results && (participations.results.length === 1)) ? participations.results[0].id : null;
+
+    if (!participationId) return;
+
+    const zipBuffer = await download(`match-participations/${participationId}/match-log/`);
+
+    return new Promise((resolve, reject) => {
+      yauzl.fromBuffer(zipBuffer, { lazyEntries: true }, (error, zipFile) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        zipFile.readEntry();
+        zipFile.on("entry", function(entry) {
+          if (entry.fileName === "stderr.log") {
+            zipFile.openReadStream(entry, (error, readStream) => {
+              if (error) {
+                reject(error);
+                return;
+              }
+
+              const chunks = [];
+              readStream.on("data", chunk => chunks.push(chunk));
+              readStream.on("end", () => {
+                const logBuffer = Buffer.concat(chunks);
+                resolve(logBuffer);
+              });
+              readStream.on("error", err => reject(err));
+            });
+          } else {
+            zipFile.readEntry();
+          }
+        });
+      });
+    });
+  }
+
 }
 
 async function call(endpoint, defaultValue, shouldRequestToken = true) {
@@ -78,6 +119,23 @@ async function call(endpoint, defaultValue, shouldRequestToken = true) {
   } else {
     console.error("Failed to fetch data from AI Arena API:", endpoint, "->", response.status, response.statusText);
     return defaultValue;
+  }
+}
+
+async function download(endpoint) {
+  const arenaApiToken = await getArenaApiToken(false);
+  if (!arenaApiToken) return;
+
+  const response = await fetch(`https://aiarena.net/api/${endpoint}`, {
+    headers: {
+      "Authorization": `Token ${arenaApiToken}`
+    }
+  });
+
+  if (response.ok) {
+    return Buffer.from(await response.arrayBuffer());
+  } else {
+    console.error("Failed to fetch data from AI Arena API:", endpoint, "->", response.status, response.statusText);
   }
 }
 

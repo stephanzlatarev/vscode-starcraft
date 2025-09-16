@@ -19,6 +19,7 @@ const Host = require("./host.js");
 const Timeline = require("./timeline.js");
 const units = require("./units.js");
 const ArenaBot = require("./arena/bot.js");
+const ArenaLogs = require("./arena/logs.js");
 const ArenaMaps = require("./arena/maps.js");
 const ArenaMatches = require("./arena/matches.js");
 
@@ -101,6 +102,12 @@ function activate(context) {
     if (activeContainer) activeContainer.dispose();
 
     vscode.commands.executeCommand("vscode.openWith", await files.copyReplayFile(match.replay), "starcraft.replay");
+  }));
+
+  context.subscriptions.push(vscode.commands.registerCommand("starcraft.arena-logs", async (match) => {
+    const file = await ArenaLogs.downloadLogs(match);
+
+    if (file) vscode.commands.executeCommand("vscode.open", file);
   }));
 
   context.subscriptions.push(vscode.window.registerWebviewViewProvider("starcraft.arena-controls", {

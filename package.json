@@ -44,6 +44,10 @@
       {
         "command": "starcraft.arena-replay",
         "title": "Start replay from AI Arena"
+      },
+      {
+        "command": "starcraft.arena-logs",
+        "title": "View bot logs"
       }
     ],
     "customEditors": [
@@ -68,6 +72,25 @@
         "priority": "option"
       }
     ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "starcraft.arena-logs",
+          "when": "false"
+        },
+        {
+          "command": "starcraft.arena-replay",
+          "when": "false"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "starcraft.arena-logs",
+          "when": "view == starcraft.arena-matches && viewItem == arenaMatch",
+          "group": "inline"
+        }
+      ]
+    },
     "views": {
       "aiarena": [
         {
@@ -139,6 +162,7 @@
     "node-fetch": "^2.6.7",
     "protobufjs": "^7.4.0",
     "seek-bzip": "^2.0.0",
+    "yauzl": "^3.2.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {

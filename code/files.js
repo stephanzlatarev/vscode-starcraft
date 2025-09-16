@@ -62,6 +62,14 @@ async function copyMpqFileToDirectory(source, directory) {
   return target;
 }
 
+async function saveFile(buffer, directory, fileName) {
+  const target = vscode.Uri.joinPath(extensionUri, directory, fileName);
+
+  await vscode.workspace.fs.writeFile(target, buffer);
+
+  return target;
+}
+
 async function getFileMeta(uri) {
   try {
     return await vscode.workspace.fs.stat(uri);
@@ -110,6 +118,7 @@ async function readReplayFile(filename) {
 
 module.exports = {
   copyReplayFile, getFileName, getIconsPath, getReplaysPath, readHtmlFile, readReplayFile, setExtensionUri,
-  copyMapFile, getMapsPath, listMaps
+  copyMapFile, getMapsPath, listMaps,
+  saveFile
 };
 
