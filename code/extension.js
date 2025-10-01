@@ -26,6 +26,7 @@ const ArenaMatches = require("./arena/matches.js");
 let activeContainer;
 
 function activate(context) {
+  Host.context = context;
   selection.init(context);
 
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);

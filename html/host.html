@@ -51,6 +51,7 @@
     const message = event.data;
 
     if (message.type === "maps") {
+      const template = message.template || {};
       const select = document.getElementById("map");
       select.innerHTML = "";
 
@@ -62,6 +63,10 @@
 
         select.appendChild(option);
       }
+
+      if (template.map) select.value = template.map;
+      if (template.race) document.getElementById("race").value = template.race;
+      if (template.difficulty) document.getElementById("difficulty").value = template.difficulty;
     }
   });
 

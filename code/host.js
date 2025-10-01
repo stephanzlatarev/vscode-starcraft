@@ -3,6 +3,9 @@ const game = require("./game.js");
 
 class Host {
 
+  // VS Code extension context
+  static context;
+
   complete = "Create game";
 
   async checking(container) {
@@ -15,8 +18,10 @@ class Host {
 
   async onMessage(message) {
     if (message.type === "maps") {
-      this.webview.postMessage({ type: "maps", maps: await files.listMaps() });
+      this.webview.postMessage({ type: "maps", maps: await files.listMaps(), template: Host.context.globalState.get("starcraft.game.template") || {} });
     } else if (message.type === "host") {
+      Host.context.globalState.update("starcraft.game.template", message);
+
       try {
         await game.request({
           createGame: {
