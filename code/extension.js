@@ -98,10 +98,21 @@ function activate(context) {
   context.subscriptions.push(vscode.window.registerTreeDataProvider("starcraft.arena-maps", new ArenaMaps()));
   context.subscriptions.push(vscode.window.registerTreeDataProvider("starcraft.arena-matches", new ArenaMatches()));
 
-  context.subscriptions.push(vscode.commands.registerCommand("starcraft.arena-replay", async (match) => {
+  context.subscriptions.push(vscode.commands.registerCommand("starcraft.arena-replay", async (match, botName) => {
     if (activeContainer) activeContainer.dispose();
 
-    vscode.commands.executeCommand("vscode.openWith", await files.copyReplayFile(match.replay), "starcraft.replay");
+    vscode.commands.executeCommand("vscode.openWith", (await files.copyReplayFile(match.replay)).with({ fragment: botName || "" }), "starcraft.replay");
+  }));
+
+  context.subscriptions.push(vscode.commands.registerCommand("starcraft.arena-replay-bot-1", async (match) => {
+    if (activeContainer) activeContainer.dispose();
+
+    vscode.commands.executeCommand("vscode.openWith", (await files.copyReplayFile(match.replay)).with({ fragment: "1" }), "starcraft.replay");
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand("starcraft.arena-replay-bot-2", async (match) => {
+    if (activeContainer) activeContainer.dispose();
+
+    vscode.commands.executeCommand("vscode.openWith", (await files.copyReplayFile(match.replay)).with({ fragment: "2" }), "starcraft.replay");
   }));
 
   context.subscriptions.push(vscode.commands.registerCommand("starcraft.arena-logs", async (match) => {
@@ -169,7 +180,7 @@ async function start(container, document, includeKey, includeChecks, removeRemai
   [
     ...prerequisites,
     ["copy-replay",  () => files.copyReplayFile(document.uri), "Get replay file"],
-    ["start-replay", () => game.play(files.getFileName(document.uri)), "Start the replay"],
+    ["start-replay", () => game.play(files.getFileName(document.uri), document.uri.fragment), "Start the replay"],
   ] : [
     ...prerequisites,
     ["start-api", () => game.play(), `Open StarCraft II API endpoint at ws://127.0.0.1:${portForBot}/sc2api`],

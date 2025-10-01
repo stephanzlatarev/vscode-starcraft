@@ -165,7 +165,7 @@ class Game {
     }
   }
 
-  async play(replayFileName) {
+  async play(replayFileName, observeBotName) {
     this.reset();
 
     if (replayFileName) {
@@ -176,14 +176,14 @@ class Game {
       const replayPath = "/replays/" + replayFileName;
       const replayInfo = await this.request({ replayInfo: { replayPath } });
 
-      selection.playerId = getSelectedPlayerId(replayFileName);
+      selection.observedPlayerId = getObservedPlayerId(replayFileName, observeBotName);
 
       await stats.read(replayFileName);
 
       await this.request({
         startReplay: {
           replayPath,
-          observedPlayerId: selection.playerId,
+          observedPlayerId: selection.observedPlayerId,
           realtime: false,
           options: {
             raw: true,
@@ -204,7 +204,7 @@ class Game {
       this.mode = MODE_GAME;
       this.disableFog = false;
 
-      selection.playerId = 1;
+      selection.observedPlayerId = 1;
     }
   }
 
@@ -372,13 +372,20 @@ function addDebugItem(state, type, item) {
   }
 }
 
-function getSelectedPlayerId(replayFileName) {
-  const split = replayFileName.split("_");
+function getObservedPlayerId(replayFileName, observeBotName) {
+  if (observeBotName === "1") return 1;
+  if (observeBotName === "2") return 2;
 
-  if (selection.bot.name === split[1]) return 1;
-  if (selection.bot.name === split[2]) return 2;
+  if (observeBotName === "") observeBotName = selection.bot.name;
+  if (!observeBotName) return 1;
 
-  return 1;
+  const index = replayFileName.indexOf(observeBotName);
+  if (index < 0) return 1;
+
+  const separator = replayFileName.indexOf("_");
+  if ((separator < 0) || (separator >= index)) return 1;
+
+  return (index === separator + 1) ? 1 : 2;
 }
 
 async function stepReplay(game, duration) {

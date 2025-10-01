@@ -17,29 +17,29 @@ class ArenaBot {
 
     container.webview.options = { enableScripts: true };
     container.webview.html = await files.readHtmlFile("arena", "bot.html");
-    container.webview.onDidReceiveMessage(function(message) {
-      if (message.event === "selection") {
-        selection.setBot(message.id);
+    container.webview.onDidReceiveMessage(async function(message) {
+      if ((message.event === "selection") && message.id) {
+        const botInfo = await ArenaApi.getBotInfo(message.id);
+
+        if (botInfo) {
+          selection.setBot(botInfo);
+        } else {
+          selection.setBot({ id: Number(message.id) });
+        }
       }
     }.bind(this));
 
     this.container.webview.postMessage({ bots: selection.favoriteBots });
+    this.container.webview.postMessage(selection.bot);
   }
 
-  async refresh() {
+  refresh() {
     if (this.container && this.container.visible) {
-      if (selection.bot.id && (this.displayed !== selection.bot.id)) {
-        this.displayed = selection.bot.id;
+      if (selection.bot.id && (this.displayed !== selection.bot)) {
+        this.displayed = selection.bot;
 
         this.container.webview.postMessage({ bots: selection.favoriteBots });
-
-        const botInfo = await ArenaApi.getBotInfo(selection.bot.id);
-
-        if (botInfo) {
-          this.container.webview.postMessage(botInfo);
-        } else {
-          this.container.webview.postMessage({ id: selection.bot.id });
-        }
+        this.container.webview.postMessage(selection.bot);
       }
     } else {
       this.displayed = null;

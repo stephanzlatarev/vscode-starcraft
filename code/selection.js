@@ -1,3 +1,4 @@
+const vscode = require("vscode");
 
 class Selection {
 
@@ -9,6 +10,8 @@ class Selection {
   favoriteBots = [];
   playerId = 1;
 
+  listeners = [];
+
   init(context) {
     this.context = context;
     this.bot = context.globalState.get("starcraft.selection.bot") || {
@@ -16,6 +19,7 @@ class Selection {
       name: null,
     };
     this.favoriteBots = context.globalState.get("starcraft.selection.favoriteBots") || [];
+    vscode.commands.executeCommand("setContext", "starcraft.isBotSelected", !!this.bot.name);
   }
 
   addFavoriteBot(id, name) {
@@ -25,15 +29,27 @@ class Selection {
     }
   }
 
-  setBot(id, name) {
-    if ((this.bot.id !== id) || (this.bot.name !== name)) {
-      this.bot.id = id;
-      this.bot.name = name;
+  setBot(info) {
+    if (!info || !info.id) return;
+
+    if (JSON.stringify(this.bot) !== JSON.stringify(info)) {
+      this.bot = info;
 
       this.context.globalState.update("starcraft.selection.bot", this.bot);
+      vscode.commands.executeCommand("setContext", "starcraft.isBotSelected", !!info.name);
+
+      for (const callback of this.listeners) {
+        callback(info);
+      }
     }
 
-    this.addFavoriteBot(id, name);
+    this.addFavoriteBot(info.id, info.name);
+  }
+
+  addListener(callback) {
+    if (callback && (this.listeners.indexOf(callback) < 0)) {
+      this.listeners.push(callback);
+    }
   }
 
 }

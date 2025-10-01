@@ -39,9 +39,11 @@ input.addEventListener("blur", () => {
   input.value = "";
 });
 window.addEventListener("message", function({ data }) {
-  if (!data) return;
-
-  if (data.bots) {
+  if (!data) {
+    loading.style.display = "block";
+    loading.innerHTML = "Loading...";
+    details.innerHTML = "";
+  } else if (data.bots) {
     botlist.innerHTML = "";
     data.bots.forEach(bot => {
       const option = document.createElement("option");
@@ -53,8 +55,9 @@ window.addEventListener("message", function({ data }) {
     displayedBotId = data.id;
     loading.style.display = "none";
     details.innerHTML = `${data.name} (${data.id}) ${data.race}`;
-  } else if (data && data.id) {
+  } else if (data.id) {
     loading.style.display = "block";
+    loading.innerHTML = "Loading bot details...";
     details.innerHTML = "";
   }
 });

@@ -5,16 +5,12 @@ const fetch = fetchModule.default || fetchModule;
 
 const RACE = { 1: "Terran", 2: "Zerg", 3: "Protoss", 4: "Random" };
 
-const knownBotNames = new Map();
-
 class ArenaApi {
 
   async getBotInfo(botId) {
     const info = await call(`bots/${botId}`);
 
     if (info) {
-      knownBotNames.set(botId, info.name);
-
       return {
         id: info.id,
         name: info.name,
@@ -26,18 +22,16 @@ class ArenaApi {
     }
   }
 
-  async listBotMatches(botId) {
-    let botName = knownBotNames.get(botId);
-    if (!botName) {
-      const botInfo = await this.getBotInfo(botId);
+  async listBotMatches(botInfo) {
+    if (!botInfo.name) {
+      botInfo = await this.getBotInfo(botInfo.id);
 
-      if (botInfo) {
-        botName = botInfo.name;
-      } else {
+      if (!botInfo || !botInfo.name) {
         return [];
       }
     }
 
+    const botId = botInfo.id;
     const count = (await call(`matches/?limit=1&bot=${botId}`, { count: 0 })).count;
     if (!count) return [];
 
@@ -46,7 +40,7 @@ class ArenaApi {
     return list.results.filter(match => match.result).map(match => ({
       id: match.id || null,
       date: match.started || "",
-      opponent: (match.result.bot1_name == botName) ? match.result.bot2_name || "" : match.result.bot1_name || "",
+      opponent: (match.result.bot1_name == botInfo.name) ? match.result.bot2_name || "" : match.result.bot1_name || "",
       result: (match.result.winner == botId) ? "Win" : match.result.winner ? "Loss" : "Tie",
       duration: match.result.game_steps || "",
       replay: match.result.replay_file || "",
@@ -56,6 +50,8 @@ class ArenaApi {
   async listActiveCompetitionMaps() {
     const competitions = await call("competitions/?status=open", { results: [] }, false);
     const activeCompetitionIds = competitions.results.map(comp => comp.id);
+
+    if (!activeCompetitionIds.length) return [];
 
     const query = activeCompetitionIds.map(id => `competitions=${id}`).join("&");
     const maps = await call(`maps/?${query}`, { results: [] }, false);

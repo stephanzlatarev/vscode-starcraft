@@ -48,6 +48,14 @@
       {
         "command": "starcraft.arena-logs",
         "title": "View bot logs"
+      },
+      {
+        "command": "starcraft.arena-replay-bot-1",
+        "title": "Replay as player 1"
+      },
+      {
+        "command": "starcraft.arena-replay-bot-2",
+        "title": "Replay as player 2"
       }
     ],
     "customEditors": [
@@ -81,6 +89,14 @@
         {
           "command": "starcraft.arena-replay",
           "when": "false"
+        },
+        {
+          "command": "starcraft.arena-replay-bot-1",
+          "when": "false"
+        },
+        {
+          "command": "starcraft.arena-replay-bot-2",
+          "when": "false"
         }
       ],
       "view/item/context": [
@@ -88,6 +104,18 @@
           "command": "starcraft.arena-logs",
           "when": "view == starcraft.arena-matches && viewItem == arenaMatch",
           "group": "inline"
+        },
+        {
+          "command": "starcraft.arena-logs",
+          "when": "view == starcraft.arena-matches && viewItem == arenaMatch"
+        },
+        {
+          "command": "starcraft.arena-replay-bot-1",
+          "when": "view == starcraft.arena-matches && viewItem == arenaMatch"
+        },
+        {
+          "command": "starcraft.arena-replay-bot-2",
+          "when": "view == starcraft.arena-matches && viewItem == arenaMatch"
         }
       ]
     },
@@ -101,7 +129,7 @@
         {
           "id": "starcraft.arena-matches",
           "name": "Arena matches",
-          "when": "starcraft.hasArenaApiToken"
+          "when": "starcraft.hasArenaApiToken && starcraft.isBotSelected && !starcraft.isInGame"
         },
         {
           "id": "starcraft.arena-maps",

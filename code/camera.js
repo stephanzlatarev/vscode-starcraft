@@ -217,7 +217,7 @@ class Camera {
 
     if (data) {
       if ((!this.viewbox || !this.focus) && this.height && this.width && this.mapbox) {
-        const center = units.list().find(unit => ((unit.owner === selection.playerId) && (unit.r > 1)));
+        const center = units.list().find(unit => ((unit.owner === selection.observedPlayerId) && (unit.r > 1)));
 
         if (center) {
           this.focus = { width: SPAN_MID, height: SPAN_MID * this.height / this.width };
