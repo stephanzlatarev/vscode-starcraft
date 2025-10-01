@@ -363,7 +363,13 @@ function addDebugItem(state, type, item) {
     }
     case "text": {
       if (!item.virtualPos && !item.worldPos) {
-        state.get("debugshapes").push(JSON.parse(item.text));
+        if (item.text && item.text.length) {
+          try {
+            state.get("debugshapes").push(JSON.parse(item.text));
+          } catch (_) {
+            // Ignore bad debug items
+          }
+        }
       } else {
         state.get("debugtexts").push(item);
       }
