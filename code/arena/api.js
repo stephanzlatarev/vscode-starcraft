@@ -32,10 +32,7 @@ class ArenaApi {
     }
 
     const botId = botInfo.id;
-    const count = (await call(`matches/?limit=1&bot=${botId}`, { count: 0 })).count;
-    if (!count) return [];
-
-    const list = await call(`matches/?ordering=started&offset=${Math.max(count - 50, 0)}&limit=50&bot=${botId}`, { results: [] });
+    const list = await call(`matches/?ordering=-started&limit=50&bot=${botId}`, { results: [] });
 
     return list.results.filter(match => match.result).map(match => ({
       id: match.id || null,
@@ -44,7 +41,7 @@ class ArenaApi {
       result: (match.result.winner == botId) ? "Win" : match.result.winner ? "Loss" : "Tie",
       duration: match.result.game_steps || "",
       replay: match.result.replay_file || "",
-    })).reverse();
+    }));
   }
 
   async listActiveCompetitionMaps() {
