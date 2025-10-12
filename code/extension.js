@@ -23,6 +23,10 @@ const ArenaLogs = require("./arena/logs.js");
 const ArenaMaps = require("./arena/maps.js");
 const ArenaMatches = require("./arena/matches.js");
 
+const CHECK_DOCKER_SERVER = {
+  darwin: "Check Docker Server on MacOS. Please, disable Rosetta emulation if on Apple Silicon.",
+};
+
 let activeContainer;
 
 function activate(context) {
@@ -170,7 +174,7 @@ async function start(container, document, includeKey, includeChecks, removeRemai
 
   const prerequisites = [
     ["docker-client", () => docker.checkClient(), "Check Docker Client"],
-    ["docker-server", () => docker.checkServer(), "Check Docker Server"],
+    ["docker-server", () => docker.checkServer(), CHECK_DOCKER_SERVER[process.platform] || "Check Docker Server"],
     ["download-game", () => docker.checkImage(), docker],
     ["start-game",    () => game.init(), "Start StarCraft II"],
     ["connect-game",  () => game.connect(), "Connect to StarCraft II"],
