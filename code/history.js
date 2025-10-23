@@ -15,8 +15,20 @@ class History {
     }
   }
 
-  get(loop) {
-    return history[loop];
+  get(loop, direction) {
+    if (direction > 0) {
+      // We're looking for a state after the given loop
+      for (let i = loop + 1; i < history.length; i++) {
+        if (history[i]) return history[i];
+      }
+    } else if (direction < 0) {
+      // We're looking for a state before the given loop
+      for (let i = loop - 1; i >= start; i--) {
+        if (history[i]) return history[i];
+      }
+    } else {
+      return history[loop];
+    }
   }
 
   clear() {

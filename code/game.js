@@ -297,7 +297,7 @@ class Game {
   }
 
   history(step) {
-    this.state = history.get(loop(this) + step) || this.state;
+    this.state = history.get(loop(this), step) || this.state;
   }
 
   pause() {
