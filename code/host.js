@@ -28,7 +28,7 @@ class Host {
             localMap: { mapPath: message.map },
             playerSetup: [
               { type: 1, race: 4 },
-              { type: 2, race: message.race, difficulty: message.difficulty, playerName: "Computer" },
+              { type: 2, race: message.race, difficulty: message.difficulty, aiBuild: message.build || 1, playerName: "Computer" },
             ],
             realtime: false,
           }

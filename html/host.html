@@ -20,6 +20,14 @@
     <option value="9">Cheater (Resources)</option>
     <option value="10">Cheater (Insane)</option>
   </select>
+  <select id="build">
+    <option value="1" selected="true">Random build</option>
+    <option value="2">Rush</option>
+    <option value="3">Timing</option>
+    <option value="4">Power</option>
+    <option value="5">Macro</option>
+    <option value="6">Air</option>
+  </select>
   on
   <select id="map">
   </select>
@@ -44,6 +52,7 @@
       map: document.getElementById("map").value,
       race: Number(document.getElementById("race").value),
       difficulty: Number(document.getElementById("difficulty").value),
+      build: Number(document.getElementById("build").value),
     });
   });
 
@@ -67,6 +76,7 @@
       if (template.map) select.value = template.map;
       if (template.race) document.getElementById("race").value = template.race;
       if (template.difficulty) document.getElementById("difficulty").value = template.difficulty;
+      if (template.build) document.getElementById("build").value = template.build;
     }
   });
 
