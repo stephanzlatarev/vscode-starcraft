@@ -56,7 +56,12 @@ class Connection {
 
   receive(data) {
     try {
-      const decoded = Response.decode(data);
+      const decoded = decode(data);
+
+      if (!decoded) {
+        // Ignore this data as it is not a valid response
+        return;
+      }
 
       if (decoded.debug) {
         const request = Request.toObject(Request.decode(data), { bytes: Array, longs: String, defaults: true });
@@ -96,6 +101,21 @@ class Connection {
     if (this.socket) {
       this.socket.close();
       this.socket = null;
+    }
+  }
+}
+
+function decode(data) {
+  try {
+    return Response.decode(data);
+  } catch (error) {
+    try {
+      // Ignore the error if this is a valid request. Also ignore the request data
+      Request.decode(data);
+      return null;
+    } catch (_) {
+      // This is neither a valid response nor a valid request, so throw the original error
+      throw error;
     }
   }
 }
