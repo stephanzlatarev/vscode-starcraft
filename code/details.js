@@ -94,10 +94,10 @@ function displayUnit(emitter, unit, loop) {
 
   if ((unitTypeInfo.movementSpeed > 0) && unit.oldpos) {
     const loops = loop - unit.oldpos.loop;
-    const distance = Math.sqrt(Math.pow(unit.pos.x - unit.oldpos.x, 2) + Math.pow(unit.pos.y - unit.oldpos.y, 2)) * loops * 22.4;
+    const distance = Math.sqrt(Math.pow(unit.pos.x - unit.oldpos.x, 2) + Math.pow(unit.pos.y - unit.oldpos.y, 2));
 
     if ((loops > 0) && (distance >= 0)) {
-      bar(lines, "Speed: ", distance, unitTypeInfo.movementSpeed * 22.4 / 16, "0;0;205");
+      bar(lines, "Speed: ", distance * 22.4 / loops, unitTypeInfo.movementSpeed * 22.4 / 16, "0;0;205");
     }
   }
 
