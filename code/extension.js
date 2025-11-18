@@ -101,7 +101,10 @@ function activate(context) {
   }));
 
   context.subscriptions.push(vscode.window.registerTreeDataProvider("starcraft.arena-maps", new ArenaMaps()));
-  context.subscriptions.push(vscode.window.registerTreeDataProvider("starcraft.arena-matches", new ArenaMatches()));
+
+  const arenaMatchesLoader = new ArenaMatches();
+  const arenaMatchesViewer = vscode.window.createTreeView("starcraft.arena-matches", { treeDataProvider: arenaMatchesLoader });
+  arenaMatchesLoader.setViewer(arenaMatchesViewer);
 
   context.subscriptions.push(vscode.commands.registerCommand("starcraft.arena-replay", async (match, botName) => {
     if (activeContainer) activeContainer.dispose();

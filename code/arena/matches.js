@@ -28,6 +28,10 @@ class ArenaMatches {
     selection.addListener(this.refresh.bind(this));
   }
 
+  setViewer(viewer) {
+    this.viewer = viewer;
+  }
+
   async getTreeItem(match) {
     if (!this.list.ready) {
       // Show the loading message in italics
@@ -82,6 +86,9 @@ class ArenaMatches {
   }
 
   refresh() {
+    // Check if viewer is showing
+    if (!this.viewer || !this.viewer.visible) return false;
+
     // Check if we're waiting for the list to load
     if (this.list.loading) return true;
 
