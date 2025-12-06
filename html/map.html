@@ -58,7 +58,7 @@ html, body {
   <g id="placement" style="stroke: none"></g>
   <g id="creep"></g>
   <g id="neutrals"></g>
-  <g id="shapes" opacity="0.2"></g>
+  <g id="shapes" stroke-linecap="round" stroke-linejoin="round"></g>
   <g id="grid" style="stroke: black; stroke-width: 0.02; fill: none;"></g>
   <g id="zonelines" style="stroke: darkgoldenrod; stroke-width: 0.4; fill: none;"></g>
   <g id="zonetexts" style="fill: darkgoldenrod; font-size: 8"></g>
@@ -208,17 +208,83 @@ function getOrderDashArray(order) {
   }
 }
 
+function getArrowArc(hx, hy, cx, cy, cr) {
+  const xx = hx - cx;
+  const axx = Math.abs(xx);
+  const dax = axx + axx;
+  const yy = hy - cy;
+  const ayy = Math.abs(yy);
+  const day = ayy + ayy;
+  const hcr = cr * 0.7;
+  const ecr = cr * 1.3;
+
+  if (dax < ayy) {
+    if (yy < 0) {
+      // Up
+      return [cx - hcr, cy + hcr, cx, cy + ecr, cx + hcr, cy + hcr];
+    } else {
+      // Down
+      return [cx - hcr, cy - hcr, cx, cy - ecr, cx + hcr, cy - hcr];
+    }
+  } else if (day < axx) {
+    if (xx < 0) {
+      // Left
+      return [cx + hcr, cy - hcr, cx + ecr, cy, cx + hcr, cy + hcr];
+    } else {
+      // Right
+      return [cx - hcr, cy - hcr, cx - ecr, cy, cx - hcr, cy + hcr];
+    }
+  } else if (xx < 0) {
+    if (yy < 0) {
+      // Up-left
+      return [cx, cy + cr, cx + cr, cy + cr, cx + cr, cy];
+    } else {
+      // Down-left
+      return [cx, cy - cr, cx + cr, cy - cr, cx + cr, cy];
+    }
+  } else {
+    if (yy < 0) {
+      // Up-right
+      return [cx, cy + cr, cx - cr, cy + cr, cx - cr, cy];
+    } else {
+      // Down-right
+      return [cx, cy - cr, cx - cr, cy - cr, cx - cr, cy];
+    }
+  }
+}
+
 function renderShapes(shapes) {
   const svg = [];
+  const pulse = 0.5 + Math.abs((Date.now() % 2000) / 2000 - 0.5);
 
   for (const one of shapes) {
+    const width = one.width || 1;
+    const dotted = one.dotted ? `stroke-dasharray: ${width},${width*2};` : "";
+    const opacity = one.pulsing ? (one.opacity || 0.2) * pulse : (one.opacity || 0.2);
+    const style = (one.filled || (one.shape === "cell") || (one.shape === "sector"))
+      ? `fill: ${one.color || "gold"}; opacity:${opacity};`
+      : `stroke: ${one.color || "gold"}; stroke-width: ${width}; fill: none; stroke-opacity:${opacity}; ${dotted}`;
+
     switch (one.shape) {
+      case "arrow": {
+        if (!one.x2 || !one.y2 || ((one.x1 === one.x2) && (one.y1 === one.y2))) {
+          svg.push(`<circle cx="${one.x1}" cy="${one.y1}" r="${one.r || 0.5}" style="${style}" />`);
+        } else {
+          const d = getArrowArc(one.x2 || one.x1, one.y2 || one.y1, one.x1, one.y1, one.r || 0.5);
+          svg.push(`<path d="M${one.x2} ${one.y2} L${d[0]} ${d[1]} Q ${d[2]} ${d[3]} ${d[4]} ${d[5]} Z" style="${style}" />`);
+        }
+        break;
+      }
+      case "cell": {
+        svg.push(`<rect x="${Math.floor(one.x)}" y="${Math.floor(one.y)}" width="1" height="1" style="${style}" />`);
+        break;
+      }
       case "circle": {
-        svg.push(`<circle cx="${one.x}" cy="${one.y}" r="${one.r}" fill="${one.color || 'gold'}" />`);
+        svg.push(`<circle cx="${one.x}" cy="${one.y}" r="${one.r}" style="${style}" />`);
         break;
       }
       case "line": {
-        svg.push(`<line x1="${one.x1}" y1="${one.y1}" x2="${one.x2}" y2="${one.y2}" stroke-with="${one.width || 1}" stroke="${one.color || 'gold'}" />`);
+        svg.push(`<line x1="${one.x1}" y1="${one.y1}" x2="${one.x2}" y2="${one.y2}" style="${style}" />`);
         break;
       }
       case "polygon": {
@@ -228,7 +294,20 @@ function renderShapes(shapes) {
           points.push(`${one.points[i]},${one.points[i + 1]}`);
         }
 
-        svg.push(`<polygon points="${points.join(' ')}" fill="${one.color || 'gold'}" />`);
+        svg.push(`<polygon points="${points.join(' ')}" style="${style}" />`);
+        break;
+      }
+      case "rect": {
+        svg.push(`<rect x="${Math.min(one.x1, one.x2)}" y="${Math.min(one.y1, one.y2)}" width="${Math.abs(one.x1 - one.x2)}" height="${Math.abs(one.y1 - one.y2)}" style="${style}" />`);
+        break;
+      }
+      case "sector": {
+        const width = (mapbox.maxx - mapbox.minx) / 10;
+        const height = (mapbox.maxy - mapbox.miny) / 10;
+        const x = mapbox.minx + one.col * width;
+        const y = mapbox.miny + one.row * height;
+
+        svg.push(`<rect x="${x}" y="${y}" width="${width}" height="${height}" style="${style}" />`);
         break;
       }
     }
@@ -257,29 +336,47 @@ function renderUnits(units, isFullView, selectedUnitTag) {
 }
 
 function renderZones(isFullView) {
-  if (isFullView) {
-    const lines = [];
-    const texts = [];
-    const stepx = viewbox.width / 10;
-    const maxx = viewbox.left + viewbox.width;
-    const stepy = viewbox.height / 10;
-    const maxy = viewbox.top + viewbox.height;
+  const lines = [];
+  const texts = [];
 
-    for (let x = viewbox.left, i = 0; x < maxx; x += stepx, i++) {
-      lines.push(`<line x1="${x + stepx}" y1="0" x2="${x + stepx}" y2="${maxy}" />`);
-      texts.push(`<text x="${x + stepx * 0.5}" y="${viewbox.top + stepy * 0.5}">${ZONE_COLS[i]}</text>`);
-    }
-    for (let y = viewbox.top, i = 0; y < maxy; y += stepy, i++) {
-      lines.push(`<line x1="0" y1="${y + stepy}" x2="${maxx}" y2="${y + stepy}" />`);
-      texts.push(`<text x="${viewbox.left + stepx * 0.1}" y="${y + stepy * 0.8}">${i}</text>`);
-    }
+  const vbmaxx = viewbox.left + viewbox.width;
+  const stepx = (mapbox.maxx - mapbox.minx) / 10;
+  const mincol = (viewbox.left > mapbox.minx) ? Math.floor((viewbox.left - mapbox.minx) / stepx) : 0;
+  const maxcol = (vbmaxx < mapbox.maxx) ? Math.ceil(10 - (mapbox.maxx - vbmaxx) / stepx) : 10;
+  const minx = mapbox.minx + mincol * stepx;
+  const maxx = mapbox.minx + maxcol * stepx;
 
-    document.getElementById("zonelines").innerHTML = lines.join("");
-    document.getElementById("zonetexts").innerHTML = texts.join("");
-  } else {
-    document.getElementById("zonelines").innerHTML = "";
-    document.getElementById("zonetexts").innerHTML = "";
+  const vbmaxy = viewbox.top + viewbox.height;
+  const stepy = (mapbox.maxy - mapbox.miny) / 10;
+  const minrow = (viewbox.top > mapbox.miny) ? Math.floor((viewbox.top - mapbox.miny) / stepy) : 0;
+  const maxrow = (vbmaxy < mapbox.maxy) ? Math.ceil(10 - (mapbox.maxy - vbmaxy) / stepy) : 10;
+  const miny = mapbox.miny + minrow * stepy;
+  const maxy = mapbox.miny + maxrow * stepy;
+
+  const mapboxheight = (mapbox.maxy - mapbox.miny);
+  const fontsize = isFullView ? 8 : 8 * viewbox.height / mapboxheight;
+
+  if (!isFullView) {
+    lines.push(`<g style="stroke-width: 0.1">`);
+    texts.push(`<g style="font-size: ${fontsize}">`);
   }
+
+  for (let x = minx, i = mincol; x < maxx; x += stepx, i++) {
+    lines.push(`<line x1="${x + stepx}" y1="${miny}" x2="${x + stepx}" y2="${maxy}" />`);
+    texts.push(`<text x="${x + stepx * 0.5}" y="${viewbox.top + fontsize}">${ZONE_COLS[i]}</text>`);
+  }
+  for (let y = miny, i = minrow; y < maxy; y += stepy, i++) {
+    lines.push(`<line x1="${minx}" y1="${y + stepy}" x2="${maxx}" y2="${y + stepy}" />`);
+    texts.push(`<text x="${viewbox.left + stepx * 0.1}" y="${y + fontsize}">${i}</text>`);
+  }
+
+  if (!isFullView) {
+    lines.push(`</g>`);
+    texts.push(`</g>`);
+  }
+
+  document.getElementById("zonelines").innerHTML = lines.join("");
+  document.getElementById("zonetexts").innerHTML = texts.join("");
 }
 
 function renderCells(layer, cells, minx, maxx, miny, maxy, color, opacity, transform) {

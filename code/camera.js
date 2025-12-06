@@ -205,7 +205,7 @@ class Camera {
     }
 
     if (debugShapes && this.viewbox && ((debugShapes !== this.debugShapes) || this.shouldRerender)) {
-      const shapes = debugShapes.filter(shape => isOnCamera(shape, this.viewbox));
+      const shapes = debugShapes.filter(shape => isOnCamera(shape, this.viewbox, this.mapbox));
 
       if (shapes.length) {
         if (!data) data = {};
@@ -226,6 +226,7 @@ class Camera {
         }
       }
 
+      data.showZones = true;
       data.focus = this.focus;
       data.viewbox = this.viewbox;
 
@@ -241,19 +242,41 @@ class Camera {
 
 }
 
-function isOnCamera(object, viewbox) {
+function isOnCamera(object, viewbox, mapbox) {
   if (object.pos) {
     return isLocationOnCamera(object.pos.x, object.pos.y, viewbox);
   } else if (object.x && object.y) {
     return isLocationOnCamera(object.x, object.y, viewbox);
+  } else if ((object.col >= 0) && (object.row >= 0)) {
+    const width = (mapbox.maxx - mapbox.minx) / 10;
+    const height = (mapbox.maxy - mapbox.miny) / 10;
+    const x1 = mapbox.minx + object.col * width;
+    const y1 = mapbox.miny + object.row * height;
+    const x2 = x1 + width;
+    const y2 = y1 + height;
+
+    return isBoxOnCamera(x1, y1, x2, y2, viewbox);
+  } else if (object.points && object.points.length) {
+    return true;
   } else {
-    if (object.x1 && object.y1 && isLocationOnCamera(object.x1, object.y1, viewbox)) return true;
-    if (object.x2 && object.y2 && isLocationOnCamera(object.x2, object.y2, viewbox)) return true;
+    const minx = Math.min(object.x1, object.x2);
+    const maxx = Math.max(object.x1, object.x2);
+    const miny = Math.min(object.y1, object.y2);
+    const maxy = Math.max(object.y1, object.y2);
+
+    return isBoxOnCamera(minx, miny, maxx, maxy, viewbox);
   }
 }
 
 function isLocationOnCamera(x, y, viewbox) {
   return (x > viewbox.left) && (y > viewbox.top) && (x < viewbox.left + viewbox.width) && (y < viewbox.top + viewbox.height);
+}
+
+function isBoxOnCamera(x1, y1, x2, y2, viewbox) {
+  const xAxisOverlap = (x1 <= viewbox.left + viewbox.width) && (x2 >= viewbox.left);
+  const yAxisOverlap = (y1 <= viewbox.top + viewbox.height) && (y2 >= viewbox.top);
+
+  return xAxisOverlap && yAxisOverlap;
 }
 
 module.exports = new Camera();
