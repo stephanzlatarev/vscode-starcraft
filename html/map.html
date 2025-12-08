@@ -361,13 +361,13 @@ function renderZones(isFullView) {
     texts.push(`<g style="font-size: ${fontsize}">`);
   }
 
-  for (let x = minx, i = mincol; x < maxx; x += stepx, i++) {
+  for (let x = minx, col = mincol; col < maxcol; x += stepx, col++) {
     lines.push(`<line x1="${x + stepx}" y1="${miny}" x2="${x + stepx}" y2="${maxy}" />`);
-    texts.push(`<text x="${x + stepx * 0.5}" y="${viewbox.top + fontsize}">${ZONE_COLS[i]}</text>`);
+    texts.push(`<text x="${x + stepx * 0.5}" y="${viewbox.top + fontsize}">${ZONE_COLS[col]}</text>`);
   }
-  for (let y = miny, i = minrow; y < maxy; y += stepy, i++) {
+  for (let y = miny, row = minrow; row < maxrow; y += stepy, row++) {
     lines.push(`<line x1="${minx}" y1="${y + stepy}" x2="${maxx}" y2="${y + stepy}" />`);
-    texts.push(`<text x="${viewbox.left + stepx * 0.1}" y="${y + fontsize}">${i}</text>`);
+    texts.push(`<text x="${viewbox.left + stepx * 0.1}" y="${y + fontsize}">${row}</text>`);
   }
 
   if (!isFullView) {
