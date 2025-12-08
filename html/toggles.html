@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<style>
+.button {
+  display: inline;
+  float: left;
+  cursor: pointer;
+  color: inherit;
+  font-size: small;
+  font-weight: bolder;
+  text-transform: uppercase;
+  border-radius: 2px;
+  margin: 2px;
+}
+.button:hover {
+  filter: brightness(2);
+}
+.on {
+  border: 2px double black;
+}
+.off {
+  border: 2px dotted lightgray;
+}
+</style>
+
+<body>
+  <div id="toggles">
+</body>
+
+<script>
+
+const vscode = acquireVsCodeApi();
+
+function setToggles(toggles) {
+  const buttons = [];
+
+  if (toggles && toggles.length) {
+    for (const one of toggles) {
+      const onoff = one.on ? "on" : "off"
+      buttons.push(`<span id="${one.toggle}" class="button ${onoff}" title="${one.description}">${one.label}</span>`);
+    }
+  }
+
+  document.getElementById("toggles").innerHTML = buttons.join("");
+}
+
+window.addEventListener("message", function({ data }) {
+  switch (data.type) {
+    case "toggles": return setToggles(data.toggles);
+  }
+});
+
+window.addEventListener("click", function(event) {
+  vscode.postMessage({ event: "click", toggle: event.target.getAttribute("id") });
+});
+
+</script>
+
+</html>

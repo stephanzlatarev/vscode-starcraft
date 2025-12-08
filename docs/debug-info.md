@@ -20,7 +20,7 @@ The following debug commands are supported at the moment:
 * Debug draw spheres will show circles on camera and minimap
 * Debug draw text
     * with virtual position - `virtualPos` - will show in the `Debug` terminal. The x coordinate will be used to split debug info into tabs in the future
-    * without virtual or world position - will be parsed as JSON object and interpreted as a shape
+    * without virtual or world position - will be parsed as JSON object and interpreted as a shape or a toggle
 
 ### Shapes
 
@@ -39,3 +39,21 @@ Shapes `arrow`, `circle`, `line`, and `polygon` support the optional properties:
 * `dotted` - When `true` and the shape is not filled displays the contour of the shape with a dotted line.
 * `opacity` - The opacity level of the coloring. Defaults to `0.2`
 * `pulsing` - When `true` displays the shape as pulsating. Defaults to `false`
+
+### Toggles
+
+Your bot can specify feature toggles to give you control over the debug information it adds to the camera, minimap and the debug terminal, or even control over its play.
+A toggle is specified by sending a debug draw text without virtual or world position in the following format:
+```
+{ "toggle": "<toggle key>, "label": "<icon or text>", "description": "<tooltip>", "on": <true or false> }
+```
+
+Your bot needs to send the above every game loop as long as the toggles are to be available.
+
+The toggles appear in the left bottom view titled "Bot Controls".
+When you press the toggle, your bot will see this in the game observation as a chat message in the form:
+```
+Toggle: <toggle key>
+```
+
+![Feature toggles](debug-toggles.jpg)

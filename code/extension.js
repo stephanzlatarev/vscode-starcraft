@@ -12,6 +12,7 @@ const minimap = require("./minimap.js");
 const selection = require("./selection.js");
 const stats = require("./stats.js");
 const timer = require("./timer.js");
+const toggles = require("./toggles.js");
 const BotPlay = require("./botplay.js");
 const BotSync = require("./botsync.js");
 const Checklist = require("./checklist.js");
@@ -74,6 +75,12 @@ function activate(context) {
       view.webview.onDidReceiveMessage(function(message) {
         if (message.event === "click") camera.select(units.get(message.unit));
       });
+    }
+  }));
+
+  context.subscriptions.push(vscode.window.registerWebviewViewProvider("starcraft.toggles", {
+    resolveWebviewView(view) {
+      toggles.attach(view);
     }
   }));
 

@@ -29,6 +29,8 @@ class Game {
   isPaused = false;
   isClosed = false;
 
+  hasToggles = false;
+
   mode = null;
   disableFog = false;
 
@@ -85,6 +87,12 @@ class Game {
     }
   }
 
+  async toggleChatMessage(toggle) {
+    if ((this.mode === MODE_GAME) && this.isJoined) {
+      await this.request({ action: { actions: [{ actionChat: { channel: 1, message: `Toggle: ${toggle}` } }] } });
+    }
+  }
+
   setStepTime(millis) {
     this.stepTime = millis;
   }
@@ -136,6 +144,7 @@ class Game {
         const observation = this.state.get("observation");
         const debugshapes = this.state.get("debugshapes");
         const debugtexts = this.state.get("debugtexts");
+        const toggles = this.state.get("toggles");
         this.state = new Map();
         this.state.set("gameInfo", gameInfo);
 
@@ -145,6 +154,7 @@ class Game {
         if (observation) this.state.set("observation", observation);
         if (debugshapes) this.state.set("debugshapes", [...debugshapes]);
         if (debugtexts) this.state.set("debugtexts", [...debugtexts]);
+        if (toggles) this.state.set("toggles", [...toggles]);
       }
     } else if (key === "debug") {
       for (const debug of value.debug) {
@@ -152,6 +162,7 @@ class Game {
           // TODO: Remove once the timer.js sync function is ready
           this.state.set("debugshapes", []);
           this.state.set("debugtexts", []);
+          this.state.set("toggles", []);
 
           for (const type in debug.draw) {
             const items = debug.draw[type];
@@ -159,6 +170,14 @@ class Game {
             for (const item of items) {
               addDebugItem(this.state, type, item);
             }
+          }
+
+          if (this.state.get("toggles").length) {
+            if (!this.hasToggles) {
+              vscode.commands.executeCommand("setContext", "starcraft.hasToggles", true);
+            }
+
+            this.hasToggles = true;
           }
         }
       }
@@ -338,6 +357,9 @@ class Game {
     this.error = null;
 
     history.clear();
+    
+    this.hasToggles = false;
+    vscode.commands.executeCommand("setContext", "starcraft.hasToggles", false);
   }
 
   stop() {
@@ -365,7 +387,13 @@ function addDebugItem(state, type, item) {
       if (!item.virtualPos && !item.worldPos) {
         if (item.text && item.text.length) {
           try {
-            state.get("debugshapes").push(JSON.parse(item.text));
+            const json = JSON.parse(item.text);
+
+            if (json.shape) {
+              state.get("debugshapes").push(json);
+            } else if (json.toggle) {
+              state.get("toggles").push(json);
+            }
           } catch (_) {
             // Ignore bad debug items
           }

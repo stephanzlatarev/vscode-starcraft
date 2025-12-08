@@ -207,10 +207,8 @@ class Camera {
     if (debugShapes && this.viewbox && ((debugShapes !== this.debugShapes) || this.shouldRerender)) {
       const shapes = debugShapes.filter(shape => isOnCamera(shape, this.viewbox, this.mapbox));
 
-      if (shapes.length) {
-        if (!data) data = {};
-        data.shapes = shapes;
-      }
+      if (!data) data = {};
+      data.shapes = shapes;
 
       this.debugShapes = debugShapes;
     }

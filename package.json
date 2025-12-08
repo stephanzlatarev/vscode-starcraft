@@ -158,6 +158,13 @@
           "when": "starcraft.isInGame"
         },
         {
+          "id": "starcraft.toggles",
+          "type": "webview",
+          "name": "Bot Controls",
+          "when": "starcraft.isInGame && starcraft.hasToggles",
+          "collapsed": true
+        },
+        {
           "id": "starcraft.controls",
           "type": "webview",
           "name": "Game Controls",
