@@ -14,4 +14,4 @@ as well as your mouse and keyboard.
 * Zoom in and out with the mouse wheel. The focus must be on the camera view so make sure to click on it first
 * Select a unit with a mouse click. The camera will mark the selected unit in orange and will follow it when it moves
 
-![Camera control](camera-control.png)
+![Camera control](camera-control.jpg)

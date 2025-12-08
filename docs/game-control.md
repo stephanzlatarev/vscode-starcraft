@@ -32,4 +32,4 @@ The following controls are available only when your bot plays a game:
 
 * Change mouse mode from `MOUSE selects unit`, to `MOUSE spawns unit`, to `MOUSE kills unit`, and back to `MOUSE selects unit`
 
-![Game control](game-control.png)
+![Game control](game-control.jpg)

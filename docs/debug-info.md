@@ -13,7 +13,7 @@ This screenshot demonstrates:
 * The coordinates of "zones" on the map and the path between them - as lines in the camera view
 * The "alert levels" of the "zones" on the map - as colors on the minimap
 
-![Debug info](debug-info.png)
+![Debug info](debug-info.jpg)
 
 The following debug commands are supported at the moment:
 * Debug draw lines will show lines on camera and minimap
