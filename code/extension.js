@@ -38,7 +38,9 @@ function activate(context) {
 
   BotPlay.setStarter(start);
   BotSync.setStarter(start);
+
   files.setExtensionUri(context.extensionUri);
+  files.setStorageUri(context.globalStorageUri);
 
   context.subscriptions.push(vscode.commands.registerCommand("starcraft.start", () => {
     if (activeContainer) activeContainer.dispose();

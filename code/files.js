@@ -5,9 +5,17 @@ const fetch = fetchModule.default || fetchModule;
 const htmlFiles = new Map();
 
 let extensionUri;
+let storageUri;
 
 function setExtensionUri(uri) {
   extensionUri = uri;
+}
+
+function setStorageUri(uri) {
+  storageUri = uri;
+
+  // Ensure the directory exists
+  vscode.workspace.fs.createDirectory(storageUri);
 }
 
 function getIconsPath(webview) {
@@ -15,11 +23,11 @@ function getIconsPath(webview) {
 }
 
 function getMapsPath() {
-  return vscode.Uri.joinPath(extensionUri, "maps").path;
+  return vscode.Uri.joinPath(storageUri, "maps").path;
 }
 
 function getReplaysPath() {
-  return vscode.Uri.joinPath(extensionUri, "replays").path;
+  return vscode.Uri.joinPath(storageUri, "replays").path;
 }
 
 function getFileName(uri) {
@@ -40,7 +48,7 @@ async function copyMpqFileToDirectory(source, directory) {
   const sourcePath = source.path ? source.path : source;
   const sourceSplit = sourcePath.split("?")[0].split("/");
   const fileName = sourceSplit[sourceSplit.length - 1];
-  const target = vscode.Uri.joinPath(extensionUri, directory, fileName);
+  const target = vscode.Uri.joinPath(storageUri, directory, fileName);
 
   if (await getFileMeta(target)) {
     // The file is already copied
@@ -63,7 +71,7 @@ async function copyMpqFileToDirectory(source, directory) {
 }
 
 async function saveFile(buffer, directory, fileName) {
-  const target = vscode.Uri.joinPath(extensionUri, directory, fileName);
+  const target = vscode.Uri.joinPath(storageUri, directory, fileName);
 
   await vscode.workspace.fs.writeFile(target, buffer);
 
@@ -80,7 +88,7 @@ async function getFileMeta(uri) {
 
 async function listMaps() {
   try {
-    const files = await vscode.workspace.fs.readDirectory(vscode.Uri.joinPath(extensionUri, "maps"));
+    const files = await vscode.workspace.fs.readDirectory(vscode.Uri.joinPath(storageUri, "maps"));
 
     return files.map(([name]) => name);
   } catch (_) {
@@ -113,11 +121,15 @@ async function readHtmlFile(...page) {
 }
 
 async function readReplayFile(filename) {
-  return await vscode.workspace.fs.readFile(vscode.Uri.joinPath(extensionUri, "replays", filename));
+  const path = vscode.Uri.joinPath(storageUri, "replays", filename);
+  const file = await vscode.workspace.fs.readFile(path);
+
+  return Buffer.from(file);
 }
 
 module.exports = {
-  copyReplayFile, getFileName, getIconsPath, getReplaysPath, readHtmlFile, readReplayFile, setExtensionUri,
+  setExtensionUri, setStorageUri,
+  copyReplayFile, getFileName, getIconsPath, getReplaysPath, readHtmlFile, readReplayFile,
   copyMapFile, getMapsPath, listMaps,
   saveFile
 };
