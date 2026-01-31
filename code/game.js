@@ -184,6 +184,19 @@ class Game {
     }
   }
 
+  async checkMap(replayFileName) {
+    if (replayFileName) {
+      const replayPath = "/replays/" + replayFileName;
+      const replayInfo = await this.request({ replayInfo: { replayPath } });
+      const mappath = replayInfo.localMapPath;
+      const exists = await files.exitsMapFile(mappath);
+
+      if (!exists) {
+        throw new Error(`${mappath} in ${files.getMapsPath()}`);
+      }
+    }
+  }
+
   async play(replayFileName, observeBotName) {
     this.reset();
 

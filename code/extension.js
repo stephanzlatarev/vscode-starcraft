@@ -197,6 +197,7 @@ async function start(container, document, includeKey, includeChecks, removeRemai
   [
     ...prerequisites,
     ["copy-replay",  () => files.copyReplayFile(document.uri), "Get replay file"],
+    ["check-map",  () => game.checkMap(files.getFileName(document.uri)), "Get map file"],
     ["start-replay", () => game.play(files.getFileName(document.uri), document.uri.fragment), "Start the replay"],
   ] : [
     ...prerequisites,

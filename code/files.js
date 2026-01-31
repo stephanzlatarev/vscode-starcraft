@@ -36,6 +36,13 @@ function getFileName(uri) {
   return path[path.length - 1];
 }
 
+async function exitsMapFile(fileName) {
+  const target = vscode.Uri.joinPath(storageUri, "maps", fileName);
+  const meta = await getFileMeta(target);
+
+  return !!meta;
+}
+
 async function copyMapFile(source) {
   return copyMpqFileToDirectory(source, "maps");
 }
@@ -130,7 +137,7 @@ async function readReplayFile(filename) {
 module.exports = {
   setExtensionUri, setStorageUri,
   copyReplayFile, getFileName, getIconsPath, getReplaysPath, readHtmlFile, readReplayFile,
-  copyMapFile, getMapsPath, listMaps,
+  exitsMapFile, copyMapFile, getMapsPath, listMaps,
   saveFile
 };
 
