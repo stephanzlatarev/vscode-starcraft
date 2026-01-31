@@ -137,6 +137,7 @@ function render(data) {
     const miny = Math.floor(Math.max(mapbox.miny, viewbox.top));
     const maxy = Math.ceil(Math.min(mapbox.maxy, viewbox.top + viewbox.height));
     const isFullView = (minx <= mapbox.minx) && (miny <= mapbox.miny) && (maxx >= mapbox.maxx) && (maxy >= mapbox.maxy);
+    const isLargeMap = (mapbox.maxx - mapbox.minx) >= 100;
 
     renderFocus(focus);
 
@@ -144,7 +145,7 @@ function render(data) {
     if (grid) renderCells(layerPathing, grid.pathing, minx, maxx, miny, maxy, "#AAAAAA", 1.0);
     if (data.creep) renderCells(layerCreep, data.creep, minx, maxx, miny, maxy, "purple", 0.5);
     if (data.fog) renderCells(layerFog, data.fog, minx, maxx, miny, maxy, "black", 0.2, (shade) => (2 - shade) / 2);
-    if (data.showZones) renderZones(isFullView);
+    if (data.showZones && isLargeMap) renderZones(isFullView);
     if (data.shapes) renderShapes(data.shapes);
     if (data.units) renderUnits(data.units, isFullView, data.focus ? data.focus.tag : null);
     if (data.units) renderOrders(data.units, isFullView);
