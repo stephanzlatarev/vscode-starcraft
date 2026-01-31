@@ -215,7 +215,7 @@ class Camera {
 
     if (data) {
       if ((!this.viewbox || !this.focus) && this.height && this.width && this.mapbox) {
-        const center = units.list().find(unit => ((unit.owner === selection.observedPlayerId) && (unit.r > 1)));
+        const center = getInitialCenter(this.mapbox, units, selection.observedPlayerId);
 
         if (center) {
           this.focus = { width: SPAN_MID, height: SPAN_MID * this.height / this.width };
@@ -233,11 +233,28 @@ class Camera {
 
       this.container.webview.postMessage({ type: "render", data });
 
-
       return true;
     }
   }
 
+}
+
+function getInitialCenter(mapbox, units, playerId) {
+  if (!playerId) return;
+
+  const list = units.list();
+  if (!list.length) return;
+
+  // Select a townhall of the player if present
+  let unit = list.find(unit => ((unit.owner === playerId) && (unit.r > 2)));
+  if (unit) return unit;
+
+  // Select a unit of the player if present
+  unit = list.find(unit => (unit.owner === playerId));
+  if (unit) return unit;
+
+  // Otherwise, select center of map
+  return { x: (mapbox.minx + mapbox.maxx) / 2, y: (mapbox.miny + mapbox.maxy) / 2 };
 }
 
 function isOnCamera(object, viewbox, mapbox) {
