@@ -2,6 +2,11 @@
 <html>
 
 <style>
+.row {
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
 .button {
   cursor: pointer;
   color: inherit;
@@ -15,19 +20,17 @@
 </style>
 
 <body>
-  <div>
+  <div class="row">
     <span id="clock"></span>
-    <span id="player" style="display: none">
-      &nbsp;
-      <svg width="10" height="10" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" rx="2" ry="2" width="10" height="10" fill="#87CEFA"/></svg>
-      <span id="minerals">10</span>
-      &nbsp;
-      <svg width="10" height="10" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" rx="2" ry="2" width="10" height="10" fill="#32CD32"/></svg>
-      <span id="vespene">20</span>
-      &nbsp;
-      <svg width="10" height="10" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" rx="2" ry="2" width="10" height="10" fill="#CE87FA"/></svg>
-      <span id="supply">30</span>
-    </span>
+    &nbsp;
+    <img id="icon-minerals" width="16" height="16" src="" />
+    <span id="minerals"></span>
+    &nbsp;
+    <img id="icon-vespene" width="16" height="16" src="" />
+    <span id="vespene"></span>
+    &nbsp;
+    <img id="icon-supply" width="16" height="16" src="" />
+    <span id="supply"></span>
   </div>
   <div id="controls">
     <div id="speed" class="button" style="display: none">&#x23F2;</div>
@@ -59,9 +62,20 @@ const LOOPS_PER_MINUTE = LOOPS_PER_SECOND * 60;
 
 const vscode = acquireVsCodeApi();
 const actionSpawnTypes = document.getElementById("action-spawn-types");
+
 let action = {};
 let config = {};
 let types = [];
+let icons;
+
+function setIcons(path) {
+  if (path && (path !== icons)) {
+    document.getElementById("icon-minerals").src = path + "minerals.png";
+    document.getElementById("icon-vespene").src = path + "vespene.png";
+    document.getElementById("icon-supply").src = path + "supply.png";
+    icons = path;
+  }
+}
 
 function setControls(c, a) {
   config = c;
@@ -113,7 +127,6 @@ function setObservation(loop, player) {
     const ss = (seconds >= 10) ? seconds : "0" + seconds;
 
     document.getElementById("clock").innerHTML = `${mm}:${ss} (${loop})`;
-    document.getElementById("player").style.display = "inline";
   }
 
   if (player) {
@@ -125,7 +138,7 @@ function setObservation(loop, player) {
 
 window.addEventListener("message", function({ data }) {
   switch (data.type) {
-    case "observation": return setObservation(data.loop, data.player);
+    case "observation": return setIcons(data.icons) & setObservation(data.loop, data.player);
     case "controls": return setControls(data.config, data.action);
     case "types": return setTypes(data.types);
   }

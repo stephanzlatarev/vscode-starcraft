@@ -15,6 +15,7 @@ class Controls {
 
   async attach(container) {
     this.containers.push(container);
+    this.iconsPath = files.getIconsPath(container.webview);
 
     container.webview.options = { enableScripts: true };
     container.webview.html = await files.readHtmlFile("controls.html");
@@ -66,7 +67,8 @@ class Controls {
       post(this, {
         type: "observation",
         loop: observation.observation.gameLoop,
-        player: observation.observation.playerCommon
+        player: observation.observation.playerCommon,
+        icons: this.iconsPath,
       }, () => {
         this.observation = observation;
       });
