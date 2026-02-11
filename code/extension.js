@@ -17,6 +17,7 @@ const BotPlay = require("./botplay.js");
 const BotSync = require("./botsync.js");
 const Checklist = require("./checklist.js");
 const Host = require("./host.js");
+const Speed = require("./speed.js");
 const Timeline = require("./timeline.js");
 const units = require("./units.js");
 const ArenaBot = require("./arena/bot.js");
@@ -32,6 +33,7 @@ let activeContainer;
 
 function activate(context) {
   Host.context = context;
+  Speed.init(context);
   selection.init(context);
 
   vscode.commands.executeCommand("setContext", "starcraft.isInGame", false);

@@ -7,15 +7,25 @@
   align-items: center;
   line-height: 1;
 }
+.inrow {
+  margin-right: 2px;
+}
 .button {
   cursor: pointer;
   color: inherit;
   font-size: small;
   font-weight: bolder;
   text-transform: uppercase;
+  border-radius: 20%;
 }
 .button:hover {
   filter: brightness(2);
+}
+.on {
+  border: 2px solid darkgray;
+}
+.off {
+  border: 2px solid transparent;
 }
 </style>
 
@@ -32,12 +42,19 @@
     <img id="icon-supply" width="16" height="16" src="" />
     <span id="supply"></span>
   </div>
+  <div id="speed" class="row">
+    <span class="inrow" style="color: gray; font-size: small; font-weight: bold;">SPEED</span>
+    <div id="speed-0" title="Fast speed">&#x1F3C3;</div>
+    <div id="speed-1" title="Clock time">&#x1F559;</div>
+    <div id="speed-2" title="x2 slower">x2</div>
+    <div id="speed-4" title="x4 slower">x4</div>
+    <div id="speed-8" title="x8 slower">x8</div>
+    <div id="speed-16" title="x16 slower">x16</div>
+    <div id="speed-null" title="Pause">&#x23F8;</div>
+  </div>
   <div id="controls">
-    <div id="speed" class="button" style="display: none">&#x23F2;</div>
     <div id="back" class="button" style="display: none">&#x23EE; 1 frame</div>
     <div id="forth" class="button" style="display: none">&#x23ED; 1 frame</div>
-    <div id="pause" class="button" style="display: none">&#x23F8; pause</div>
-    <div id="resume" class="button" style="display: none">&#x23F5; resume</div>
     <div id="skip" class="button" style="display: none">&#x23ED; 1 min</div>
 
     <div>
@@ -56,7 +73,8 @@
 </body>
 
 <script>
-const COMMANDS = ["back", "botplay", "botsync", "fog", "forth", "owner", "pause", "resume", "skip", "speed"];
+const COMMANDS = ["back", "botplay", "botsync", "fog", "forth", "owner", "skip"];
+const SPEEDS = [0, 1, 2, 4, 8, 16, null]; // null = paused
 const LOOPS_PER_SECOND = 22.4;
 const LOOPS_PER_MINUTE = LOOPS_PER_SECOND * 60;
 
@@ -85,8 +103,6 @@ function setControls(c, a) {
     document.getElementById(command).style.display = ((config[command] === false) || (controls[command] === false)) ? "none" : "block";
   }
 
-  document.getElementById("speed").innerHTML = "&#x23F2; " + config.speed;
-
   if ((config.mouse === false) || (action.mode === "select")) {
     document.getElementById("action-kill").style.display = "none";
     document.getElementById("action-select").style.display = "inline";
@@ -103,6 +119,12 @@ function setControls(c, a) {
     document.getElementById("action-kill").style.display = "inline";
     document.getElementById("action-select").style.display = "none";
     document.getElementById("action-spawn").style.display = "none";
+  }
+}
+
+function setSpeed(selection) {
+  for (const speed of SPEEDS) {
+    document.getElementById("speed-" + speed).className = "button inrow " + ((speed === selection) ? "on" : "off");
   }
 }
 
@@ -139,7 +161,7 @@ function setObservation(loop, player) {
 window.addEventListener("message", function({ data }) {
   switch (data.type) {
     case "observation": return setIcons(data.icons) & setObservation(data.loop, data.player);
-    case "controls": return setControls(data.config, data.action);
+    case "controls": return setControls(data.config, data.action) & setSpeed(data.speed);
     case "types": return setTypes(data.types);
   }
 });
@@ -147,6 +169,12 @@ window.addEventListener("message", function({ data }) {
 for (const command of COMMANDS) {
   document.getElementById(command).addEventListener("click", () => {
     vscode.postMessage({ event: command });
+  });
+}
+
+for (const speed of SPEEDS) {
+  document.getElementById("speed-" + speed).addEventListener("click", () => {
+    vscode.postMessage({ event: "speed", speed });
   });
 }
 

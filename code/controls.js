@@ -3,6 +3,7 @@ const BotSync = require("./botsync.js");
 const camera = require("./camera.js");
 const files = require("./files.js");
 const game = require("./game.js");
+const Speed = require("./speed.js");
 const timer = require("./timer.js");
 const Types = require("./types.js");
 const units = require("./units.js");
@@ -31,10 +32,8 @@ class Controls {
         case "forth": return this.forth();
         case "mouse": return this.mouse(message.action);
         case "owner": return toggleSpawnOwner(this);
-        case "pause": return this.pause();
-        case "resume": return this.resume();
         case "skip": return this.skip();
-        case "speed": return this.speed();
+        case "speed": return this.speed(message.speed);
       }
     }.bind(this));
 
@@ -52,6 +51,7 @@ class Controls {
     this.container = null;
     this.observation = null;
     this.activeAction = null;
+    this.activeSpeed = null;
     this.activeState = null;
     this.activeTypes = null;
   }
@@ -62,6 +62,9 @@ class Controls {
     if (!container || !container.visible) return;
 
     const observation = game.get("observation");
+    const speed = Speed.get();
+
+    syncControlsToSpeed(this);
 
     if (observation && ((observation !== this.observation) || (container !== this.container))) {
       post(this, {
@@ -74,11 +77,12 @@ class Controls {
       });
     }
 
-    if ((this.activeAction !== this.action) || (this.activeState !== this.state) || (container !== this.container)) {
+    if ((this.activeAction !== this.action) || (this.activeSpeed !== speed) || (this.activeState !== this.state) || (container !== this.container)) {
       post(this,
-        { type: "controls", config: this.state, action: this.action },
+        { type: "controls", speed, config: this.state, action: this.action },
         () => {
           this.activeAction = this.action;
+          this.activeSpeed = speed;
           this.activeState = this.state;
         }
       );
@@ -109,25 +113,17 @@ class Controls {
     this.config = { ...config };
     this.action = { ...action };
 
-    if (game.isPaused) {
-      this.state = { back: false, botplay: false, botsync: false, forth: false, pause: false, resume: true, speed: "fast speed", ...config };
-    } else {
-      this.state = { back: false, botplay: false, botsync: false, forth: false, resume: false, speed: "fast speed", ...config };
-    }
+    this.state = { back: false, botplay: false, botsync: false, forth: false, ...config };
 
     this.renew();
   }
 
   back() {
-    if (!this.isPaused) this.pause();
-
     post(this, { type: "back" });
     game.history(-1);
   }
 
   forth() {
-    if (!this.isPaused) this.pause();
-
     post(this, { type: "forth" });
     game.history(+1);
   }
@@ -153,14 +149,7 @@ class Controls {
       this.isPaused = true;
       this.activeState = null;
 
-      this.state.back = true;
-      this.state.botplay = (this.config.botplay !== false);
-      this.state.botsync = (this.config.botsync !== false);
-      this.state.forth = true;
-      this.state.pause = false;
-      this.state.resume = true;
-      this.state.skip = false;
-
+      Speed.pause();
       game.pause();
     }
   }
@@ -169,14 +158,7 @@ class Controls {
     this.isPaused = false;
     this.activeState = null;
 
-    this.state.back = false;
-    this.state.botplay = false;
-    this.state.botsync = false;
-    this.state.forth = false;
-    this.state.pause = true;
-    this.state.resume = false;
-    this.state.skip = (this.config.skip !== false);
-
+    Speed.resume();
     game.resume();
   }
 
@@ -185,32 +167,42 @@ class Controls {
     game.skip();
   }
 
-  speed() {
-    if (this.config.speed >= 16) {
-      this.config.speed = 0;
-      this.state.speed = "fast speed";
-      game.setStepTime(0);
-    } else if (this.config.speed >= 4) {
-      this.config.speed = 16;
-      this.state.speed = "x16 slower";
-      game.setStepTime(16 * 1000 / 22.4);
-    } else if (this.config.speed >= 2) {
-      this.config.speed = 4;
-      this.state.speed = "x4 slower";
-      game.setStepTime(4 * 1000 / 22.4);
-    } else if (this.config.speed >= 1) {
-      this.config.speed = 2;
-      this.state.speed = "x2 slower";
-      game.setStepTime(2 * 1000 / 22.4);
-    } else {
-      this.config.speed = 1;
-      this.state.speed = "clock time";
-      game.setStepTime(1000 / 22.4);
-    }
+  speed(speed) {
+    Speed.set(speed);
+    syncControlsToSpeed(this);
 
+    this.activeSpeed = speed;
     this.activeState = null;
   }
 
+}
+
+function syncControlsToSpeed(controls) {
+  const speed = Speed.get();
+
+  if (speed !== null) {
+    // Game is running
+    controls.state.back = false;
+    controls.state.botplay = false;
+    controls.state.botsync = false;
+    controls.state.forth = false;
+    controls.state.skip = (controls.config.skip !== false);
+
+    if (controls.isPaused) {
+      controls.resume();
+    }
+  } else {
+    // Game is paused
+    controls.state.back = true;
+    controls.state.botplay = (controls.config.botplay !== false);
+    controls.state.botsync = (controls.config.botsync !== false);
+    controls.state.forth = true;
+    controls.state.skip = false;
+
+    if (!controls.isPaused) {
+      controls.pause();
+    }
+  }
 }
 
 function toggleSpawnOwner(controls) {

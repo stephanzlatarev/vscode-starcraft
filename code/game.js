@@ -4,6 +4,7 @@ const Connection = require("./connection.js");
 const files = require("./files.js");
 const history = require("./history.js");
 const selection = require("./selection.js");
+const Speed = require("./speed.js");
 const stats = require("./stats.js");
 const Types = require("./types.js");
 
@@ -36,7 +37,6 @@ class Game {
 
   stepSize = 1;
   stepSkip = 0;
-  stepTime = 0;
 
   error = null;
 
@@ -91,10 +91,6 @@ class Game {
     if ((this.mode === MODE_GAME) && this.isJoined) {
       await this.request({ action: { actions: [{ actionChat: { channel: 1, message: `Toggle: ${toggle}` } }] } });
     }
-  }
-
-  setStepTime(millis) {
-    this.stepTime = millis;
   }
 
   async connect() {
@@ -362,7 +358,6 @@ class Game {
     this.isPaused = false;
     this.stepSize = 1;
     this.stepSkip = 0;
-    this.stepTime = 0;
 
     this.state = new Map();
     this.positions = new Map();
@@ -370,6 +365,7 @@ class Game {
     this.error = null;
 
     history.clear();
+    Speed.reset();
     
     this.hasToggles = false;
     vscode.commands.executeCommand("setContext", "starcraft.hasToggles", false);
@@ -470,20 +466,28 @@ async function stepReplay(game, duration) {
 }
 
 async function delay(game, shouldSendPauseCode) {
-  if (game.stepTime) {
-    const elapsed = Date.now() - game.lastStepTime;
-    const delay = game.stepTime - elapsed;
+  const delay = Speed.get();
 
-    if (delay > 0) {
+  if (game.isPaused) {
+    // Game is already paused
+  } else if (delay === null) {
+    // Game is supposed to be paused
+    game.pause();
+  } else if (delay > 0) {
+    const full = delay * 1000 / 22.4;
+    const elapsed = Date.now() - game.lastStepTime;
+    const remaining = full - elapsed;
+
+    if (remaining > 0) {
       if (shouldSendPauseCode && !game.isPaused) game.game.send(Connection.CODE_PAUSE);
 
-      await sleep(delay);
+      await sleep(remaining);
 
       if (shouldSendPauseCode && !game.isPaused) game.game.send(Connection.CODE_RESUME);
     }
-
-    game.lastStepTime = Date.now();
   }
+
+  game.lastStepTime = Date.now();
 }
 
 function loop(game) {

@@ -16,6 +16,21 @@
       "title": "StarCraft II for AI",
       "type": "object",
       "properties": {
+        "starcraft.speed": {
+          "description": "Starting speed of bot games and replays",
+          "type": "string",
+          "enum": [
+            "Keep last used",
+            "Fast speed",
+            "Clock time",
+            "x2 slower",
+            "x4 slower",
+            "x8 slower",
+            "x16 slower",
+            "Paused"
+          ],
+          "default": "Fast speed"
+        },
         "starcraft.portForBot": {
           "description": "StarCraft II API endpoint port for your bot to connect to",
           "type": "number",

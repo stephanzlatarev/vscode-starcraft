@@ -14,8 +14,7 @@ Some controls are available only when watching a replay or when playing a game.
 
 The following controls are available when watching a replay or when playing a game:
 
-* Change the speed from `FAST SPEED`, to `CLOCK TIME`, to `X2 SLOWER`, to `X4 SLOWER`, to `X16 SLOWER`, and back to `FAST SPEED`
-* Pause and resume. You can use the buttons under `GAME CONTROLS` or `Spacebar` key when the focus is on the camera view
+* Change the speed between `🏃 Fast speed`, `🕙 Clock time`, `x2 slower`, `x4 slower`, `x8 slower`, `x16 slower`, or `⏸ Paused`. You can use `Spacebar` key when the focus is on the camera view to pause or resume to the previous speed
 * While paused, move one frame back or forth. This is limited to 10 seconds before the time the game was paused
 * Use `👁 TOGGLE FOG` to enable and disable fog of war. When your bot is playing, you change the fog for your bot
 
@@ -33,3 +32,9 @@ The following controls are available only when your bot plays a game:
 * Change mouse mode from `MOUSE selects unit`, to `MOUSE spawns unit`, to `MOUSE kills unit`, and back to `MOUSE selects unit`
 
 ![Game control](game-control.jpg)
+
+# Settings
+
+Use `Starcraft: Speed` setting under `StarCraft II for AI` to set the starting speed for replays and games. 
+
+![Settings speed](settings-speed.jpg)
