@@ -34,7 +34,7 @@ class ArenaApi {
     const botId = botInfo.id;
     const list = await call(`matches/?ordering=-started&limit=50&bot=${botId}`, { results: [] });
 
-    return list.results.filter(match => match.result).map(match => ({
+    return list.results.filter(match => (match.result && match.result.replay_file)).map(match => ({
       id: match.id || null,
       date: match.started || "",
       opponent: (match.result.bot1_name == botInfo.name) ? match.result.bot2_name || "" : match.result.bot1_name || "",
