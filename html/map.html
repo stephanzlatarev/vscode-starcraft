@@ -65,6 +65,7 @@ html, body {
   <g id="orders" style="stroke-width: 0.2; stroke-linecap: round"></g>
   <g id="buildings"></g>
   <g id="units"></g>
+  <g id="effects" style="stroke-width: 0.2; stroke-dasharray: 0.45,0.05; fill: none;"></g>
   <g id="fog"></g>
   <g id="focus" style="stroke: gold; stroke-width: 0.8; fill: none"></g>
 </svg>
@@ -78,6 +79,7 @@ const ZONE_COLS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 const map = document.getElementById("map");
 const layerBuildings = document.getElementById("buildings");
 const layerCreep = document.getElementById("creep");
+const layerEffects = document.getElementById("effects");
 const layerFocus = document.getElementById("focus");
 const layerFog = document.getElementById("fog");
 const layerGrid = document.getElementById("grid");
@@ -109,6 +111,7 @@ function reset() {
 
   layerBuildings.replaceChildren();
   layerCreep.replaceChildren();
+  layerEffects.replaceChildren();
   layerFocus.replaceChildren();
   layerFog.replaceChildren();
   layerGrid.replaceChildren();
@@ -149,11 +152,26 @@ function render(data) {
     if (data.shapes) renderShapes(data.shapes);
     if (data.units) renderUnits(data.units, isFullView, data.focus ? data.focus.tag : null);
     if (data.units) renderOrders(data.units, isFullView);
+    if (data.effects) renderEffects(data.effects);
 
     map.setAttribute("viewBox", [viewbox.left, viewbox.top, viewbox.width, viewbox.height].join(" "));
   }
 
   vscode.postMessage({ event: "ready" });
+}
+
+function renderEffects(effects) {
+  const svg = [];
+
+  for (const one of effects) {
+    const color = OWNER_COLOR[one.owner] || "white";
+
+    svg.push(`<circle cx="${one.x}" cy="${one.y}" r="0.2" stroke="${color}" />`);
+
+    if (one.r >= 1) svg.push(`<circle cx="${one.x}" cy="${one.y}" r="${one.r}" stroke="${color}" />`);
+  }
+
+  layerEffects.innerHTML = svg.join("");
 }
 
 function renderGrid() {

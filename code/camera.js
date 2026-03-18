@@ -1,4 +1,5 @@
 const details = require("./details.js");
+const effects = require("./effects.js");
 const files = require("./files.js");
 const game = require("./game.js");
 const minimap = require("./minimap.js");
@@ -183,12 +184,11 @@ class Camera {
     }
 
     if (observation && ((observation !== this.observation) || this.shouldRerender)) {
-      const list = units.list(this.viewbox);
-
       if (!data) data = {};
       data.creep = observation.observation.rawData.mapState.creep;
       data.fog = observation.observation.rawData.mapState.visibility;
-      data.units = list;
+      data.units = units.list(this.viewbox);
+      data.effects = effects.list(this.viewbox);
 
       this.observation = observation;
       this.renderedViewBox = this.viewbox;

@@ -1,3 +1,4 @@
+const effects = require("./effects.js");
 const files = require("./files.js");
 const game = require("./game.js");
 const timer = require("./timer.js");
@@ -75,6 +76,7 @@ class MiniMap {
 
     if (observation && ((observation !== this.observation) || (container !== this.container))) {
       data.units = units.list();
+      data.effects = effects.list();
       data.creep = observation.observation.rawData.mapState.creep;
       data.fog = observation.observation.rawData.mapState.visibility;
 
@@ -87,7 +89,7 @@ class MiniMap {
       this.debugShapes = debugShapes;
     }
 
-    if (data.viewbox || data.units || data.shapes) {
+    if (data.viewbox || data.units || data.effects || data.shapes) {
       container.webview.postMessage({ type: "render", data });
 
       this.container = container;
