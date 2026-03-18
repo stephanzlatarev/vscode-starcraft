@@ -93,6 +93,17 @@ async function getFileMeta(uri) {
   }
 }
 
+async function listFiles(directory) {
+  try {
+    const files = await vscode.workspace.fs.readDirectory(vscode.Uri.joinPath(storageUri, directory));
+
+    return files.map(([name]) => vscode.Uri.joinPath(storageUri, directory, name));
+  } catch (_) {
+    // The directory does not exist
+    return [];
+  }
+}
+
 async function listMaps() {
   try {
     const files = await vscode.workspace.fs.readDirectory(vscode.Uri.joinPath(storageUri, "maps"));
@@ -138,6 +149,6 @@ module.exports = {
   setExtensionUri, setStorageUri,
   copyReplayFile, getFileName, getIconsPath, getReplaysPath, readHtmlFile, readReplayFile,
   exitsMapFile, copyMapFile, getMapsPath, listMaps,
-  saveFile
+  listFiles, saveFile
 };
 

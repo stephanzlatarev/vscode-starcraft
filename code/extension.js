@@ -135,9 +135,13 @@ function activate(context) {
   }));
 
   context.subscriptions.push(vscode.commands.registerCommand("starcraft.arena-logs", async (match) => {
-    const file = await ArenaLogs.downloadLogs(match);
+    const logs = await ArenaLogs.downloadLogs(match);
 
-    if (file) vscode.commands.executeCommand("vscode.open", file);
+    if (logs) {
+      for (const file of logs) {
+        vscode.commands.executeCommand("vscode.open", file, { preview: false });
+      }
+    }
   }));
 
   context.subscriptions.push(vscode.window.registerWebviewViewProvider("starcraft.arena-controls", {

@@ -59,7 +59,7 @@ class ArenaApi {
     const participations = await call(`match-participations/?bot=${botId}&match=${matchId}`, { results: [] });
     const participationId = (participations.results && (participations.results.length === 1)) ? participations.results[0].id : null;
 
-    if (!participationId) return;
+    if (!participationId) return [];
 
     const zipBuffer = await download(`match-participations/${participationId}/match-log/`);
 
@@ -70,27 +70,26 @@ class ArenaApi {
           return;
         }
 
+        const logs = new Map();
+
         zipFile.readEntry();
         zipFile.on("entry", function(entry) {
-          if (entry.fileName === "stderr.log") {
-            zipFile.openReadStream(entry, (error, readStream) => {
-              if (error) {
-                reject(error);
-                return;
-              }
+          zipFile.openReadStream(entry, (error, readStream) => {
+            if (error) {
+              reject(error);
+              return;
+            }
 
-              const chunks = [];
-              readStream.on("data", chunk => chunks.push(chunk));
-              readStream.on("end", () => {
-                const logBuffer = Buffer.concat(chunks);
-                resolve(logBuffer);
-              });
-              readStream.on("error", err => reject(err));
+            const chunks = [];
+            readStream.on("data", chunk => chunks.push(chunk));
+            readStream.on("end", () => {
+              logs.set(entry.fileName, Buffer.concat(chunks));
+              zipFile.readEntry();
             });
-          } else {
-            zipFile.readEntry();
-          }
+            readStream.on("error", err => reject(err));
+          });
         });
+        zipFile.on("end", () => resolve(logs));
       });
     });
   }
