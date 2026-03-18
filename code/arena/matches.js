@@ -58,27 +58,7 @@ class ArenaMatches {
   async getChildren(match) {
     if (match) return [];
 
-    if (this.list.ready && this.list.loading) {
-      const controller = this;
-
-      // The promise makes the tree show a progress bar without removing the displayed list
-      return new Promise(async function(resolve) {
-        const sleep = 1000;
-        const limit = REFRESH_INTERVAL / 1000;
-
-        for (let i = 0; i < limit; i++) {
-          if (!controller.list.loading) break;
-
-          await new Promise(r => setTimeout(r, sleep));
-        }
-
-        if (controller.list.ready) {
-          resolve(controller.list.matches || []);
-        } else {
-          resolve([controller.list.message]);
-        }
-      });
-    } else if (this.list.ready) {
+    if (this.list.ready) {
       return this.list.matches || [];
     } else {
       return [this.list.message];
@@ -101,7 +81,8 @@ class ArenaMatches {
       showLoadingStatus(this, `Listing ${selection.bot.name}'s matches from AI Arena...`);
     }
 
-    listMatches(this);
+    const loadPromise = listMatches(this);
+    vscode.window.withProgress({ location: { viewId: "starcraft.arena-matches" } }, () => loadPromise);
 
     return (this.list.ready || this.list.loading);
   }
@@ -122,7 +103,6 @@ async function listMatches(controller) {
   if (selection.bot.id) {
     try {
       controller.list.loading = true;
-      emitterReload.fire();
 
       const matches = await ArenaApi.listBotMatches(selection.bot);
 
@@ -135,7 +115,6 @@ async function listMatches(controller) {
       }
     } finally {
       controller.list.loading = false;
-      emitterReload.fire();
     }
   } else {
     showLoadingStatus(controller, "Select a bot to view matches");
