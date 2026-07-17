@@ -18,18 +18,27 @@ class Host {
 
   async onMessage(message) {
     if (message.type === "maps") {
-      this.webview.postMessage({ type: "maps", maps: await files.listMaps(), template: Host.context.globalState.get("starcraft.game.template") || {} });
+      this.webview.postMessage({ type: "maps", maps: await files.listMaps() });
+    } else if (message.type === "template") {
+      this.webview.postMessage({ type: "template", template: Host.context.globalState.get("starcraft.game.template") || {} });
+    } else if (message.type === "bots") {
+      this.webview.postMessage({ type: "bots", bots: await files.listBots() });
     } else if (message.type === "host") {
       Host.context.globalState.update("starcraft.game.template", message);
+
+      const playerSetup = [{ type: 1, race: 4 }];
+
+      if (message.bot) {
+        playerSetup.push({ type: 1, race: message.race, playerName: message.bot });
+      } else {
+        playerSetup.push({ type: 2, race: message.race, difficulty: message.difficulty, aiBuild: message.build || 1, playerName: "Computer" });
+      }
 
       try {
         await game.request({
           createGame: {
             localMap: { mapPath: message.map },
-            playerSetup: [
-              { type: 1, race: 4 },
-              { type: 2, race: message.race, difficulty: message.difficulty, aiBuild: message.build || 1, playerName: "Computer" },
-            ],
+            playerSetup,
             realtime: false,
           }
         });

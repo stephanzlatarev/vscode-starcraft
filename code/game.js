@@ -57,6 +57,7 @@ class Game {
     const result = spawnSync("docker", ["run", "-d", "--name", "starcraft",
       "--platform", "linux/amd64",
       "-p", `${portForBot}:5000`, "-p", `${portToWatch}:5001`,
+      "-v", files.getBotsPath().split(":").join("") + ":/bots",
       "-v", files.getReplaysPath().split(":").join("") + ":/replays",
       "-v", files.getMapsPath().split(":").join("") + ":/StarCraftII/Maps",
       "stephanzlatarev/starcraft"

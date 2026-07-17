@@ -8,17 +8,21 @@
     <option value="2">Zerg</option>
     <option value="4" selected="true">Random</option>
   </select>
-  <select id="difficulty">
-    <option value="1">Very Easy</option>
-    <option value="2">Easy</option>
-    <option value="3">Medium</option>
-    <option value="4">Hard</option>
-    <option value="5">Harder</option>
-    <option value="6">Very Hard</option>
-    <option value="7" selected="true">Elite</option>
-    <option value="8">Cheater (Vision)</option>
-    <option value="9">Cheater (Resources)</option>
-    <option value="10">Cheater (Insane)</option>
+  <select id="opponent">
+    <optgroup label="Built-in AI">
+      <option value="1">Very Easy</option>
+      <option value="2">Easy</option>
+      <option value="3">Medium</option>
+      <option value="4">Hard</option>
+      <option value="5">Harder</option>
+      <option value="6">Very Hard</option>
+      <option value="7" selected="true">Elite</option>
+      <option value="8">Cheater (Vision)</option>
+      <option value="9">Cheater (Resources)</option>
+      <option value="10">Cheater (Insane)</option>
+    </optgroup>
+    <optgroup id="bots-group" label="Bot">
+    </optgroup>
   </select>
   <select id="build">
     <option value="1" selected="true">Random build</option>
@@ -38,6 +42,8 @@
 <script>
   const vscode = acquireVsCodeApi();
 
+  let template = {};
+
   function prettyMapName(name) {
     const aie = name.endsWith("AIE.SC2Map");
     const raw = aie ? name.replace("AIE.SC2Map", "") : name.replace(".SC2Map", "");
@@ -46,21 +52,38 @@
     return raw.replace(/([a-z])([A-Z])/g, '$1 $2') + (aie ? " AIE" : "");
   }
 
-  document.getElementById("save").addEventListener("click", function(event) {
-    vscode.postMessage({
+  function isBot(value) {
+    return isNaN(Number(value));
+  }
+
+  function updateBuildVisibility() {
+    document.getElementById("build").style.display = isBot(document.getElementById("opponent").value) ? "none" : "";
+  }
+
+  document.getElementById("opponent").addEventListener("change", updateBuildVisibility);
+
+  document.getElementById("save").addEventListener("click", function() {
+    const opponentValue = document.getElementById("opponent").value;
+    const message = {
       type: "host",
       map: document.getElementById("map").value,
       race: Number(document.getElementById("race").value),
-      difficulty: Number(document.getElementById("difficulty").value),
-      build: Number(document.getElementById("build").value),
-    });
+    };
+
+    if (isBot(opponentValue)) {
+      message.bot = opponentValue;
+    } else {
+      message.difficulty = Number(opponentValue);
+      message.build = Number(document.getElementById("build").value);
+    }
+
+    vscode.postMessage(message);
   });
 
   window.addEventListener("message", event => {
     const message = event.data;
 
     if (message.type === "maps") {
-      const template = message.template || {};
       const select = document.getElementById("map");
       select.innerHTML = "";
 
@@ -74,12 +97,37 @@
       }
 
       if (template.map) select.value = template.map;
+    } else if (message.type === "template") {
+      template = message.template;
+
+      if (template.map) document.getElementById("map").value = template.map;
       if (template.race) document.getElementById("race").value = template.race;
-      if (template.difficulty) document.getElementById("difficulty").value = template.difficulty;
+      if (template.difficulty) document.getElementById("opponent").value = template.difficulty;
       if (template.build) document.getElementById("build").value = template.build;
+      if (template.bot) document.getElementById("opponent").value = template.bot;
+      updateBuildVisibility();
+    } else if (message.type === "bots") {
+      const group = document.getElementById("bots-group");
+      group.innerHTML = "";
+
+      for (const name of message.bots) {
+        const option = document.createElement("option");
+
+        option.value = name;
+        option.textContent = name;
+
+        group.appendChild(option);
+      }
+
+      if (template.bot) {
+        document.getElementById("opponent").value = template.bot;
+        updateBuildVisibility();
+      }
     }
   });
 
   vscode.postMessage({ type: "maps" });
+  vscode.postMessage({ type: "bots" });
+  vscode.postMessage({ type: "template" });
 </script>
 <!-- Fragment end -->

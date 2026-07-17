@@ -18,6 +18,10 @@ function setStorageUri(uri) {
   vscode.workspace.fs.createDirectory(storageUri);
 }
 
+function getBotsPath() {
+  return vscode.Uri.joinPath(storageUri, "bots").path;
+}
+
 function getIconsPath(webview) {
   return webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "icons")) + "/";
 }
@@ -104,6 +108,17 @@ async function listFiles(directory) {
   }
 }
 
+async function listBots() {
+  try {
+    const entries = await vscode.workspace.fs.readDirectory(vscode.Uri.joinPath(storageUri, "bots"));
+
+    return entries.filter(([, type]) => type === vscode.FileType.Directory).map(([name]) => name);
+  } catch (_) {
+    // The directory does not exist
+    return [];
+  }
+}
+
 async function listMaps() {
   try {
     const files = await vscode.workspace.fs.readDirectory(vscode.Uri.joinPath(storageUri, "maps"));
@@ -148,6 +163,7 @@ async function readReplayFile(filename) {
 module.exports = {
   setExtensionUri, setStorageUri,
   copyReplayFile, getFileName, getIconsPath, getReplaysPath, readHtmlFile, readReplayFile,
+  getBotsPath, listBots,
   exitsMapFile, copyMapFile, getMapsPath, listMaps,
   listFiles, saveFile
 };
