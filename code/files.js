@@ -116,43 +116,51 @@ async function extractBotZip(botName, buffer) {
 
   await vscode.workspace.fs.createDirectory(targetDir);
 
-  await new Promise((resolve, reject) => {
-    yauzl.fromBuffer(buffer, { lazyEntries: true }, (error, zipFile) => {
-      if (error) {
-        reject(error);
-        return;
-      }
-
-      zipFile.readEntry();
-      zipFile.on("entry", (entry) => {
-        const target = vscode.Uri.joinPath(targetDir, entry.fileName);
-
-        if (entry.fileName.endsWith("/")) {
-          vscode.workspace.fs.createDirectory(target).then(() => zipFile.readEntry());
+  try {
+    await new Promise((resolve, reject) => {
+      yauzl.fromBuffer(buffer, { lazyEntries: true }, (error, zipFile) => {
+        if (error) {
+          reject(error);
           return;
         }
 
-        zipFile.openReadStream(entry, (error, readStream) => {
-          if (error) {
-            reject(error);
+        zipFile.readEntry();
+        zipFile.on("entry", (entry) => {
+          const target = vscode.Uri.joinPath(targetDir, entry.fileName);
+
+          if (entry.fileName.endsWith("/")) {
+            vscode.workspace.fs.createDirectory(target).then(() => zipFile.readEntry()).catch(reject);
             return;
           }
 
-          const chunks = [];
-          readStream.on("data", chunk => chunks.push(chunk));
-          readStream.on("end", async () => {
-            const target = vscode.Uri.joinPath(targetDir, entry.fileName);
-            const parent = vscode.Uri.joinPath(target, "..");
-            await vscode.workspace.fs.createDirectory(parent);
-            await vscode.workspace.fs.writeFile(target, Buffer.concat(chunks));
-            zipFile.readEntry();
+          zipFile.openReadStream(entry, (error, readStream) => {
+            if (error) {
+              reject(error);
+              return;
+            }
+
+            const chunks = [];
+            readStream.on("data", chunk => chunks.push(chunk));
+            readStream.on("end", () => {
+              const target = vscode.Uri.joinPath(targetDir, entry.fileName);
+              const parent = vscode.Uri.joinPath(target, "..");
+              vscode.workspace.fs.createDirectory(parent)
+                .then(() => vscode.workspace.fs.writeFile(target, Buffer.concat(chunks)))
+                .then(() => zipFile.readEntry())
+                .catch(reject);
+            });
+            readStream.on("error", err => reject(err));
           });
-          readStream.on("error", err => reject(err));
         });
+        zipFile.on("end", resolve);
       });
-      zipFile.on("end", resolve);
     });
-  });
+  } catch (error) {
+    await vscode.workspace.fs.delete(targetDir, { recursive: true });
+
+    console.log("Unable to extract the zip of bot:", botName);
+    console.log(error);
+  }
 }
 
 async function listBots() {
