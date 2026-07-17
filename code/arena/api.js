@@ -22,6 +22,24 @@ class ArenaApi {
     }
   }
 
+  async getBotZip(botId) {
+    const arenaApiToken = await getArenaApiToken(true);
+    if (!arenaApiToken) return;
+
+    const info = await call(`bots/${botId}`);
+    if (!info || !info.bot_zip) return;
+
+    const response = await fetch(info.bot_zip, {
+      headers: { "Authorization": `Token ${arenaApiToken}` }
+    });
+
+    if (response.ok) {
+      return Buffer.from(await response.arrayBuffer());
+    } else {
+      console.error("Failed to fetch bot zip:", info.bot_zip, "->", response.status, response.statusText);
+    }
+  }
+
   async listBotMatches(botInfo) {
     if (!botInfo.name) {
       botInfo = await this.getBotInfo(botInfo.id);

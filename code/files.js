@@ -1,4 +1,5 @@
 const vscode = require("vscode");
+const yauzl = require("yauzl");
 const fetchModule = require("node-fetch");
 const fetch = fetchModule.default || fetchModule;
 
@@ -108,6 +109,52 @@ async function listFiles(directory) {
   }
 }
 
+async function extractBotZip(botName, buffer) {
+  await vscode.workspace.fs.createDirectory(vscode.Uri.joinPath(storageUri, "bots"));
+
+  const targetDir = vscode.Uri.joinPath(storageUri, "bots", botName);
+
+  await vscode.workspace.fs.createDirectory(targetDir);
+
+  await new Promise((resolve, reject) => {
+    yauzl.fromBuffer(buffer, { lazyEntries: true }, (error, zipFile) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      zipFile.readEntry();
+      zipFile.on("entry", (entry) => {
+        const target = vscode.Uri.joinPath(targetDir, entry.fileName);
+
+        if (entry.fileName.endsWith("/")) {
+          vscode.workspace.fs.createDirectory(target).then(() => zipFile.readEntry());
+          return;
+        }
+
+        zipFile.openReadStream(entry, (error, readStream) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          const chunks = [];
+          readStream.on("data", chunk => chunks.push(chunk));
+          readStream.on("end", async () => {
+            const target = vscode.Uri.joinPath(targetDir, entry.fileName);
+            const parent = vscode.Uri.joinPath(target, "..");
+            await vscode.workspace.fs.createDirectory(parent);
+            await vscode.workspace.fs.writeFile(target, Buffer.concat(chunks));
+            zipFile.readEntry();
+          });
+          readStream.on("error", err => reject(err));
+        });
+      });
+      zipFile.on("end", resolve);
+    });
+  });
+}
+
 async function listBots() {
   try {
     const entries = await vscode.workspace.fs.readDirectory(vscode.Uri.joinPath(storageUri, "bots"));
@@ -163,7 +210,7 @@ async function readReplayFile(filename) {
 module.exports = {
   setExtensionUri, setStorageUri,
   copyReplayFile, getFileName, getIconsPath, getReplaysPath, readHtmlFile, readReplayFile,
-  getBotsPath, listBots,
+  getBotsPath, listBots, extractBotZip,
   exitsMapFile, copyMapFile, getMapsPath, listMaps,
   listFiles, saveFile
 };

@@ -21,6 +21,7 @@ const Speed = require("./speed.js");
 const Timeline = require("./timeline.js");
 const units = require("./units.js");
 const ArenaBot = require("./arena/bot.js");
+const ArenaBots = require("./arena/bots.js");
 const ArenaLogs = require("./arena/logs.js");
 const ArenaMaps = require("./arena/maps.js");
 const ArenaMatches = require("./arena/matches.js");
@@ -111,6 +112,7 @@ function activate(context) {
     }
   }));
 
+  context.subscriptions.push(vscode.window.registerTreeDataProvider("starcraft.arena-bots", new ArenaBots()));
   context.subscriptions.push(vscode.window.registerTreeDataProvider("starcraft.arena-maps", new ArenaMaps()));
 
   const arenaMatchesLoader = new ArenaMatches();

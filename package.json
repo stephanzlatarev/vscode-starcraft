@@ -147,6 +147,12 @@
           "when": "starcraft.hasArenaApiToken && starcraft.isBotSelected && !starcraft.isInGame"
         },
         {
+          "id": "starcraft.arena-bots",
+          "name": "Arena bots",
+          "when": "!starcraft.isInGame",
+          "collapsed": true
+        },
+        {
           "id": "starcraft.arena-maps",
           "name": "Arena maps",
           "when": "!starcraft.isInGame",
