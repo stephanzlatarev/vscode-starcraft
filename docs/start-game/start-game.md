@@ -7,8 +7,6 @@ has_children: true
 has_toc: false
 ---
 
-## Against the built-in AI
-
 Start a new game for your bot to play against the computer:
 * Press `Ctrl+Shift+P` to open the command palette in Visual Studio Code
 * Type `Start StarCraft II for an AI bot` to find the command
@@ -19,9 +17,9 @@ Start a new game for your bot to play against the computer:
 
 ![Start game](start-game.gif)
 
-## Against an AI Arena bot
+### Against an AI Arena bot
 
-When you set your [AI Arena](https://aiarena.net/) API token in the extension settings, the extension automatically downloads a set of publicly available bots and shows them in the **Arena bots** view in the AI Arena panel.
+When you set your [AI Arena](https://aiarena.net/) API token in the extension settings, the extension automatically downloads a set of publicly available bots[^1] and shows them in the **Arena bots** view in the AI Arena panel.
 
 ![Arena bots view](start-game-view-bots.jpg)
 
@@ -38,3 +36,5 @@ To start a game against one of these bots:
 ![Start game against bot](start-game-vs-bot.jpg)
 
 Your bot and the selected opponent bot will both connect to the game and play against each other.
+
+[^1]: Many thanks to AiSee, Phantom, RaphRR, and rasper for sharing their bots!
